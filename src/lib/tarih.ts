@@ -39,3 +39,8 @@ export function yilOnce(yil: number, simdi = new Date().getFullYear()): string {
   if (fark <= 0) return 'bu yıl'
   return `${fark.toLocaleString('tr-TR')} yıl önce`
 }
+
+/** Yılın kaçıncı günü (1 Ocak = 1). Yaz saati kaymasından etkilenmemek için UTC ile hesaplanır. */
+export function yilinGunu(d: Date): number {
+  return (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 1)) / 86400000 + 1
+}

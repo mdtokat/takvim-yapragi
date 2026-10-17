@@ -4,6 +4,7 @@ import { bildirimleriPlanla, izinIste } from '../lib/bildirim'
 import { linkAc, yerelUygulama } from '../lib/platform'
 import { KategoriSecici } from '../components/KategoriSecici'
 import { SITE_URL, SURUM } from '../lib/sabitler'
+import { sesCal } from '../lib/ses'
 
 const TEMALAR: { id: Tema; ad: string }[] = [
   { id: 'sistem', ad: 'Sistem' },
@@ -34,14 +35,29 @@ export function AyarlarEkrani() {
       <h1>Ayarlar</h1>
 
       <section className="ayar-bolum">
-        <h2>Görünüm</h2>
+        <h2>Görünüm ve ses</h2>
         <div className="bolumlu-secici" role="radiogroup" aria-label="Tema">
           {TEMALAR.map((t) => (
-            <button key={t.id} role="radio" aria-checked={ayar.tema === t.id} onClick={() => ayarlariGuncelle({ tema: t.id })}>
+            <button key={t.id} role="radio" aria-checked={ayar.tema === t.id} onClick={() => {
+                sesCal('tik')
+                ayarlariGuncelle({ tema: t.id })
+              }}>
               {t.ad}
             </button>
           ))}
         </div>
+        <label className="anahtar-satir">
+          <span>Ses efektleri</span>
+          <input
+            type="checkbox"
+            role="switch"
+            checked={ayar.ses}
+            onChange={(e) => {
+              ayarlariGuncelle({ ses: e.target.checked })
+              sesCal('yirt')
+            }}
+          />
+        </label>
       </section>
 
       <section className="ayar-bolum">

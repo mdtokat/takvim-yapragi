@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { sesCal } from '../lib/ses'
 
 type Sekme = 'bugun' | 'takvim' | 'ayarlar'
 
@@ -43,7 +44,13 @@ export function AltMenu({ aktif }: { aktif: Sekme }) {
   return (
     <nav className="alt-menu" aria-label="Ana menü">
       {OGELER.map((o) => (
-        <a key={o.id} href={o.yol} className="alt-menu-oge" aria-current={aktif === o.id ? 'page' : undefined}>
+        <a
+          key={o.id}
+          href={o.yol}
+          className="alt-menu-oge"
+          aria-current={aktif === o.id ? 'page' : undefined}
+          onClick={() => aktif !== o.id && sesCal('tik')}
+        >
           {o.ikon}
           <span>{o.ad}</span>
         </a>

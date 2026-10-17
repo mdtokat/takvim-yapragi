@@ -1,22 +1,31 @@
-import { useRef } from 'react'
-import { AYLAR, GUNLER, artikYil, bugun, tarihCoz } from '../lib/tarih'
+import { useRef, type CSSProperties } from 'react'
+import { AYLAR, GUNLER, artikYil, bugun, tarihCoz, yilinGunu } from '../lib/tarih'
 import type { GununBilgisi } from '../lib/tipler'
 import { kategoriAdi } from '../lib/tipler'
-import { linkAc } from '../lib/platform'
+import { hareketAzalt, linkAc } from '../lib/platform'
 
 interface Props {
   tarih: string
   bilgi: GununBilgisi | null | undefined // undefined = yükleniyor
-  yon: 'ileri' | 'geri' | null
-  onDegis: (gun: number) => void
-  onGit: (tarih: string) => void
+  onDegis?: (gun: number, cekme: number) => void
+  onGit?: (tarih: string) => void
+  /** Geçiş sırasında gösterilen eski yaprak: koparılıp düşen ya da alttan görünen kopya. */
+  kopya?: 'kopan' | 'alttaki'
+  /** Önceki güne dönülürken yeni yaprak yukarıdan iner. */
+  inis?: boolean
+  /** Kopan kopyanın, parmağın bıraktığı açıdan başlaması için. */
+  cekme?: number
+  onBitti?: () => void
 }
 
-export function Yaprak({ tarih, bilgi, yon, onDegis, onGit }: Props) {
+const ESIK = 60
+
+export function Yaprak({ tarih, bilgi, onDegis, onGit, kopya, inis, cekme = 0, onBitti }: Props) {
   const d = tarihCoz(tarih)!
   const buYil = new Date().getFullYear()
   const pazar = d.getDay() === 0
-  const dokunus = useRef<{ x: number; y: number } | null>(null)
+  const ref = useRef<HTMLElement>(null)
+  const dokunus = useRef<{ x: number; y: number; p: number } | null>(null)
   const yirmiDokuzSubat = d.getMonth() === 1 && d.getDate() === 28 && !artikYil(d.getFullYear())
 
   const sonArtikYil = () => {
@@ -25,23 +34,60 @@ export function Yaprak({ tarih, bilgi, yon, onDegis, onGit }: Props) {
     return y
   }
 
+  // Parmakla çekerken yaprak alt köşesinden kalkar; bırakınca ya kopar ya yerine oturur.
+  const egimVer = (p: number) => {
+    const el = ref.current
+    if (!el) return
+    el.style.transform = p ? `rotateX(${(-Math.abs(p) * 16).toFixed(2)}deg) rotateZ(${(p * 4).toFixed(2)}deg)` : ''
+    el.classList.toggle('yaprak-cekiliyor', p !== 0)
+  }
+
+  const sinif = ['yaprak', kopya && `yaprak-${kopya}`, inis && 'yaprak-inis'].filter(Boolean).join(' ')
+
   return (
     <article
-      key={tarih}
-      className={`yaprak${yon ? ` yaprak-gel-${yon}` : ''}`}
-      onTouchStart={(e) => (dokunus.current = { x: e.touches[0].clientX, y: e.touches[0].clientY })}
+      ref={ref}
+      className={sinif}
+      inert={kopya ? true : undefined}
+      aria-hidden={kopya ? true : undefined}
+      style={kopya === 'kopan' ? ({ '--cek': cekme } as CSSProperties) : undefined}
+      onAnimationEnd={(e) => e.target === e.currentTarget && onBitti?.()}
+      onTouchStart={(e) => {
+        if (kopya) return
+        dokunus.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, p: 0 }
+        if (ref.current) ref.current.style.transition = 'none'
+      }}
+      onTouchMove={(e) => {
+        const b = dokunus.current
+        if (!b || hareketAzalt()) return
+        const dx = e.touches[0].clientX - b.x
+        const dy = e.touches[0].clientY - b.y
+        if (Math.abs(dx) < Math.abs(dy)) return
+        b.p = Math.max(-1, Math.min(1, dx / 220))
+        egimVer(b.p)
+      }}
       onTouchEnd={(e) => {
         const b = dokunus.current
         dokunus.current = null
         if (!b) return
         const dx = e.changedTouches[0].clientX - b.x
         const dy = e.changedTouches[0].clientY - b.y
-        if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) onDegis(dx < 0 ? 1 : -1)
+        if (Math.abs(dx) > ESIK && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          onDegis?.(dx < 0 ? 1 : -1, b.p)
+          return
+        }
+        if (ref.current) ref.current.style.transition = ''
+        egimVer(0)
+      }}
+      onTouchCancel={() => {
+        dokunus.current = null
+        if (ref.current) ref.current.style.transition = ''
+        egimVer(0)
       }}
     >
       <div className="yaprak-delikler" aria-hidden="true" />
       <header className="yaprak-ust">
-        <button className="yaprak-ok" onClick={() => onDegis(-1)} aria-label="Önceki gün">
+        <button className="yaprak-ok" onClick={() => onDegis?.(-1, 0)} aria-label="Önceki gün">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -54,22 +100,23 @@ export function Yaprak({ tarih, bilgi, yon, onDegis, onGit }: Props) {
             {d.getFullYear() !== buYil ? `, ${d.getFullYear()}` : ''}
           </span>
         </h1>
-        <button className="yaprak-ok" onClick={() => onDegis(1)} aria-label="Sonraki gün">
+        <button className="yaprak-ok" onClick={() => onDegis?.(1, 0)} aria-label="Sonraki gün">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
       </header>
+      <p className="yaprak-yilin-gunu">Yılın {yilinGunu(d)}. günü</p>
 
       {(tarih !== bugun() || yirmiDokuzSubat) && (
         <div className="yaprak-baglantilar">
           {tarih !== bugun() && (
-            <button className="metin-dugme" onClick={() => onGit(bugun())}>
+            <button className="metin-dugme" onClick={() => onGit?.(bugun())}>
               Bugüne dön
             </button>
           )}
           {yirmiDokuzSubat && (
-            <button className="metin-dugme" onClick={() => onGit(`${sonArtikYil()}-02-29`)}>
+            <button className="metin-dugme" onClick={() => onGit?.(`${sonArtikYil()}-02-29`)}>
               29 Şubat'ı da gör
             </button>
           )}
@@ -83,11 +130,11 @@ export function Yaprak({ tarih, bilgi, yon, onDegis, onGit }: Props) {
           <div className="iskelet kisa" />
         </div>
       ) : bilgi ? (
-        <section className="gunun-bilgisi" aria-labelledby="gb-baslik">
+        <section className="gunun-bilgisi" aria-labelledby={kopya ? undefined : 'gb-baslik'}>
           <p className="gunun-bilgisi-etiket">
             Günün bilgisi <span className="etiket">{kategoriAdi(bilgi.kategori)}</span>
           </p>
-          <h2 id="gb-baslik">{bilgi.baslik}</h2>
+          <h2 id={kopya ? undefined : 'gb-baslik'}>{bilgi.baslik}</h2>
           <p>{bilgi.metin}</p>
           <button className="kaynak-link" onClick={() => void linkAc(bilgi.kaynak_url)}>
             Kaynağı aç

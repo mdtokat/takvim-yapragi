@@ -4,10 +4,20 @@ import { bugun, gunEkle, tarihCoz, artikYil } from '../lib/tarih'
 import { degistir, git } from '../lib/yonlendirme'
 import { ayarlariGuncelle, useAyarlar } from '../lib/ayarlar'
 import { quizKaydi, seri } from '../lib/quizDepo'
-import { TURLER, type GunVerisi, type Tur } from '../lib/tipler'
+import { TURLER, type GunVerisi, type GununBilgisi, type Tur } from '../lib/tipler'
+import { sesCal } from '../lib/ses'
+import { hareketAzalt } from '../lib/platform'
 import { Yaprak } from '../components/Yaprak'
 import { OlayListesi } from '../components/OlayListesi'
 import { KategoriSecici } from '../components/KategoriSecici'
+
+interface Gecis {
+  no: number
+  yon: 'ileri' | 'geri'
+  tarih: string
+  bilgi: GununBilgisi | null | undefined
+  cekme: number
+}
 
 interface Durum {
   veri: GunVerisi | null
@@ -25,13 +35,10 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
     const ob = onbellektekiGun(tarih)
     return { veri: ob, yukleniyor: true, hata: false, onbellekten: !!ob }
   })
-  // Yaprak animasyonunun yönü: render sırasında önceki tarihle karşılaştırılır.
-  const yonRef = useRef<{ t: string; yon: 'ileri' | 'geri' | null }>({ t: tarih, yon: null })
-  if (yonRef.current.t !== tarih) {
-    yonRef.current = { t: tarih, yon: tarih > yonRef.current.t ? 'ileri' : 'geri' }
-  }
-  const yon = yonRef.current.yon
-
+  // Gün değişirken eski yaprak bir an daha gösterilir: ileri giderken koparılıp düşer,
+  // geri giderken yeni yaprağın altında kalır.
+  const [gecis, setGecis] = useState<Gecis | null>(null)
+  const gecisNo = useRef(0)
   useEffect(() => {
     let iptal = false
     const ob = onbellektekiGun(tarih)
@@ -44,8 +51,38 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
     }
   }, [tarih, deneme])
 
-  const gunDegis = (n: number) => degistir(`/gun/${gunEkle(tarih, n)}`)
-  const gunGit = (t: string) => degistir(t === bugun() ? '/' : `/gun/${t}`)
+  useEffect(() => {
+    if (!gecis) return
+    const t = setTimeout(() => setGecis((g) => (g === gecis ? null : g)), 900)
+    return () => clearTimeout(t)
+  }, [gecis])
+
+  const gunGit = (t: string, cekme = 0) => {
+    if (t === tarih) return
+    const yon = t > tarih ? 'ileri' : 'geri'
+    sesCal(yon === 'ileri' ? 'yirt' : 'geriAl')
+    if (!hareketAzalt()) {
+      const bilgi = durum.veri ? durum.veri.bilgi : durum.yukleniyor ? undefined : null
+      setGecis({ no: ++gecisNo.current, yon, tarih, bilgi, cekme })
+    }
+    degistir(t === bugun() ? '/' : `/gun/${t}`)
+  }
+  const gunDegis = (n: number, cekme = 0) => gunGit(gunEkle(tarih, n), cekme)
+
+  // Masaüstünde ok tuşlarıyla gün değiştirme.
+  const gunDegisRef = useRef(gunDegis)
+  gunDegisRef.current = gunDegis
+  useEffect(() => {
+    const f = (e: KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
+      const hedef = e.target as HTMLElement | null
+      if (hedef?.closest('input, textarea, select, [contenteditable]')) return
+      if (e.key === 'ArrowLeft') gunDegisRef.current(-1)
+      else if (e.key === 'ArrowRight') gunDegisRef.current(1)
+    }
+    window.addEventListener('keydown', f)
+    return () => window.removeEventListener('keydown', f)
+  }, [])
 
   const filtreli = useMemo(() => {
     const liste = durum.veri?.olaylar ?? []
@@ -74,14 +111,32 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
 
   return (
     <div className="gun-ekrani">
-      <Yaprak
-        key={tarih}
-        tarih={tarih}
-        bilgi={veri ? veri.bilgi : durum.yukleniyor ? undefined : null}
-        yon={yon}
-        onDegis={gunDegis}
-        onGit={gunGit}
-      />
+      <div className="takvim-blogu">
+        <div className="blok-cilt" aria-hidden="true">
+          <span>{tarihCoz(tarih)!.getFullYear()}</span>
+        </div>
+        <div className="yaprak-yigini">
+          {gecis?.yon === 'geri' && <Yaprak key={`g${gecis.no}`} tarih={gecis.tarih} bilgi={gecis.bilgi} kopya="alttaki" />}
+          <Yaprak
+            key={tarih}
+            tarih={tarih}
+            bilgi={veri ? veri.bilgi : durum.yukleniyor ? undefined : null}
+            inis={gecis?.yon === 'geri'}
+            onDegis={gunDegis}
+            onGit={gunGit}
+          />
+          {gecis?.yon === 'ileri' && (
+            <Yaprak
+              key={`g${gecis.no}`}
+              tarih={gecis.tarih}
+              bilgi={gecis.bilgi}
+              kopya="kopan"
+              cekme={gecis.cekme}
+              onBitti={() => setGecis((g) => (g?.no === gecis.no ? null : g))}
+            />
+          )}
+        </div>
+      </div>
 
       {durum.onbellekten && !durum.yukleniyor && (
         <p className="uyari" role="status">
@@ -127,7 +182,10 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
                 role="tab"
                 aria-selected={tur === t.id}
                 className="sekme"
-                onClick={() => setTur(t.id)}
+                onClick={() => {
+                  if (tur !== t.id) sesCal('tik')
+                  setTur(t.id)
+                }}
               >
                 {t.ad}
                 <span className="sekme-sayi">{sayilar[t.id]}</span>

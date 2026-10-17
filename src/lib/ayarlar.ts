@@ -9,9 +9,10 @@ export interface Ayarlar {
   bildirim: boolean
   bildirimSaati: string // "HH:MM"
   kategoriler: Kategori[] // boş = hepsi
+  ses: boolean
 }
 
-const VARSAYILAN: Ayarlar = { tema: 'sistem', bildirim: false, bildirimSaati: '09:00', kategoriler: [] }
+const VARSAYILAN: Ayarlar = { tema: 'sistem', bildirim: false, bildirimSaati: '09:00', kategoriler: [], ses: true }
 const ANAHTAR = 'ayarlar'
 
 type Dinleyici = (a: Ayarlar) => void
