@@ -10,9 +10,7 @@ alter table tt_quiz
   add column if not exists kaynak_url   text check (kaynak_url like 'https://%');
 
 -- Soru, videosunun yayın saatinden önce istemciye gelmez.
-drop policy if exists tt_quiz_oku on tt_quiz;
-create policy tt_quiz_oku on tt_quiz
-  for select to anon, authenticated
+alter policy tt_quiz_oku on tt_quiz
   using (tarih <= (now() at time zone 'Europe/Istanbul')::date
          and (acilis is null or acilis <= now()));
 
