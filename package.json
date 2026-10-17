@@ -17,6 +17,7 @@
     "@capacitor/core": "^8.5.3",
     "@capacitor/local-notifications": "^8.3.1",
     "@capacitor/share": "^8.0.3",
+    "@fontsource-variable/playfair-display": "^5.3.0",
     "@fontsource/barlow-condensed": "^5.3.0",
     "@fontsource/source-serif-4": "^5.3.1",
     "@supabase/supabase-js": "^2.118.0",

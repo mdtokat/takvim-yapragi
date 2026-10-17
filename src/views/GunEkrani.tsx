@@ -12,14 +12,14 @@ import { Yaprak } from '../components/Yaprak'
 import { OlayListesi } from '../components/OlayListesi'
 import { KategoriSecici } from '../components/KategoriSecici'
 
-function seritMetni(durumlar: SoruDurumu[], kayit: QuizKaydi | null): string {
-  if (quizTamam(kayit)) return `Günün soruları: ${kayit!.dogru}/3 doğru`
+function soruDurumMetni(durumlar: SoruDurumu[], kayit: QuizKaydi | null): string {
+  if (quizTamam(kayit)) return `${kayit!.dogru}/3 doğru`
   const acik = durumlar.filter((d) => d.soru && cevabi(kayit, d) === null)
-  if (acik.length === 3) return 'Günün üç sorusunu çöz'
+  if (acik.length === 3) return 'Üç soru seni bekliyor'
   if (acik.length > 0) return acik[0].slot ? `${SLOT_ADI[acik[0].slot]} sorusu açıldı` : 'Sıradaki soruyu çöz'
   const siradaki = durumlar.find((d) => !d.soru)
   if (siradaki?.acilis) return `${cevapSayisi(kayit) ? 'Sıradaki' : 'İlk'} soru ${saatteMetni(siradaki.acilis)} açılır`
-  return 'Günün soruları'
+  return 'Cevaplarını gör'
 }
 
 interface Gecis {
@@ -124,31 +124,30 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
 
   return (
     <div className="gun-ekrani">
-      <div className="takvim-blogu">
-        <div className="blok-cilt" aria-hidden="true">
-          <span>{tarihCoz(tarih)!.getFullYear()}</span>
-        </div>
-        <div className="yaprak-yigini">
-          {gecis?.yon === 'geri' && <Yaprak key={`g${gecis.no}`} tarih={gecis.tarih} bilgi={gecis.bilgi} kopya="alttaki" />}
+      <header className="manset">
+        <p className="manset-ad">Mindmash</p>
+        <p className="manset-alt">Tarihte bugün, günün bilgisi ve soruları</p>
+      </header>
+      <div className="yaprak-yigini">
+        {gecis?.yon === 'geri' && <Yaprak key={`g${gecis.no}`} tarih={gecis.tarih} bilgi={gecis.bilgi} kopya="alttaki" />}
+        <Yaprak
+          key={tarih}
+          tarih={tarih}
+          bilgi={veri ? veri.bilgi : durum.yukleniyor ? undefined : null}
+          inis={gecis?.yon === 'geri'}
+          onDegis={gunDegis}
+          onGit={gunGit}
+        />
+        {gecis?.yon === 'ileri' && (
           <Yaprak
-            key={tarih}
-            tarih={tarih}
-            bilgi={veri ? veri.bilgi : durum.yukleniyor ? undefined : null}
-            inis={gecis?.yon === 'geri'}
-            onDegis={gunDegis}
-            onGit={gunGit}
+            key={`g${gecis.no}`}
+            tarih={gecis.tarih}
+            bilgi={gecis.bilgi}
+            kopya="kopan"
+            cekme={gecis.cekme}
+            onBitti={() => setGecis((g) => (g?.no === gecis.no ? null : g))}
           />
-          {gecis?.yon === 'ileri' && (
-            <Yaprak
-              key={`g${gecis.no}`}
-              tarih={gecis.tarih}
-              bilgi={gecis.bilgi}
-              kopya="kopan"
-              cekme={gecis.cekme}
-              onBitti={() => setGecis((g) => (g?.no === gecis.no ? null : g))}
-            />
-          )}
-        </div>
+        )}
       </div>
 
       {durum.onbellekten && !durum.yukleniyor && (
@@ -157,17 +156,22 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
         </p>
       )}
 
-      {quizHazir && (
-        <a className="quiz-serit" href={`#/quiz/${tarih}`}>
-          <span className="quiz-serit-metin">{seritMetni(durumlar, quizSonucu)}</span>
-          {tarih === bugun() && seri() > 0 && <span className="seri">{seri()} günlük seri</span>}
-        </a>
-      )}
-
-      {tarih === bugun() && (
-        <a className="quiz-serit quiz-serit-ikincil" href="#/kelime">
-          <span className="quiz-serit-metin">Günün kelimesini bul</span>
-        </a>
+      {(quizHazir || tarih === bugun()) && (
+        <div className="koseler">
+          {quizHazir && (
+            <a className="kose" href={`#/quiz/${tarih}`}>
+              <span className="kose-baslik">Günün soruları</span>
+              <span className="kose-durum">{soruDurumMetni(durumlar, quizSonucu)}</span>
+              {tarih === bugun() && seri() > 0 && <span className="seri">{seri()} günlük seri</span>}
+            </a>
+          )}
+          {tarih === bugun() && (
+            <a className="kose" href="#/kelime">
+              <span className="kose-baslik">Günün kelimesi</span>
+              <span className="kose-durum">5 harfli kelimeyi 6 denemede bul</span>
+            </a>
+          )}
+        </div>
       )}
 
       {durum.hata && !veri ? (
@@ -191,7 +195,10 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
           </button>
         </div>
       ) : (
-        <section className="olaylar" aria-label="Tarihte bugün">
+        <section className="olaylar" aria-labelledby="olaylar-baslik">
+          <h2 id="olaylar-baslik" className="olaylar-baslik">
+            Tarihte bugün
+          </h2>
           <div className="sekmeler" role="tablist">
             {TURLER.map((t) => (
               <button

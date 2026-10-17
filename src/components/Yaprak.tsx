@@ -34,11 +34,11 @@ export function Yaprak({ tarih, bilgi, onDegis, onGit, kopya, inis, cekme = 0, o
     return y
   }
 
-  // Parmakla çekerken yaprak alt köşesinden kalkar; bırakınca ya kopar ya yerine oturur.
+  // Parmakla çekerken sayfa sol kenarından dönmeye başlar; bırakınca ya çevrilir ya yerine oturur.
   const egimVer = (p: number) => {
     const el = ref.current
     if (!el) return
-    el.style.transform = p ? `rotateX(${(-Math.abs(p) * 16).toFixed(2)}deg) rotateZ(${(p * 4).toFixed(2)}deg)` : ''
+    el.style.transform = p ? `rotateY(${(p * 14).toFixed(2)}deg)` : ''
     el.classList.toggle('yaprak-cekiliyor', p !== 0)
   }
 
@@ -85,7 +85,6 @@ export function Yaprak({ tarih, bilgi, onDegis, onGit, kopya, inis, cekme = 0, o
         egimVer(0)
       }}
     >
-      <div className="yaprak-delikler" aria-hidden="true" />
       <header className="yaprak-ust">
         <button className="yaprak-ok" onClick={() => onDegis?.(-1, 0)} aria-label="Önceki gün">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -93,11 +92,12 @@ export function Yaprak({ tarih, bilgi, onDegis, onGit, kopya, inis, cekme = 0, o
           </svg>
         </button>
         <h1 className="yaprak-tarih">
-          <span className="yaprak-ay">{AYLAR[d.getMonth()]}</span>
-          <span className={`yaprak-gun${pazar ? ' kirmizi' : ''}`}>{d.getDate()}</span>
-          <span className="yaprak-hafta">
-            {GUNLER[d.getDay()]}
-            {d.getFullYear() !== buYil ? `, ${d.getFullYear()}` : ''}
+          <span className="yaprak-gun">{d.getDate()}</span>
+          <span className="yaprak-tarih-yan">
+            <span className="yaprak-ay">
+              {AYLAR[d.getMonth()]} {d.getFullYear()}
+            </span>
+            <span className={`yaprak-hafta${pazar ? ' kirmizi' : ''}`}>{GUNLER[d.getDay()]}</span>
           </span>
         </h1>
         <button className="yaprak-ok" onClick={() => onDegis?.(1, 0)} aria-label="Sonraki gün">
@@ -131,11 +131,9 @@ export function Yaprak({ tarih, bilgi, onDegis, onGit, kopya, inis, cekme = 0, o
         </div>
       ) : bilgi ? (
         <section className="gunun-bilgisi" aria-labelledby={kopya ? undefined : 'gb-baslik'}>
-          <p className="gunun-bilgisi-etiket">
-            Günün bilgisi <span className="etiket">{kategoriAdi(bilgi.kategori)}</span>
-          </p>
+          <p className="gunun-bilgisi-etiket">Günün bilgisi · {kategoriAdi(bilgi.kategori)}</p>
           <h2 id={kopya ? undefined : 'gb-baslik'}>{bilgi.baslik}</h2>
-          <p>{bilgi.metin}</p>
+          <p className="gunun-bilgisi-metin">{bilgi.metin}</p>
           <button className="kaynak-link" onClick={() => void linkAc(bilgi.kaynak_url)}>
             Kaynağı aç
           </button>

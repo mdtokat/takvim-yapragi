@@ -80,15 +80,15 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 ## 5. Ekranlar
 
 ### 5.1 Bugün (ana ekran)
-- Üstte gerçek bir duvar takvimi bloğu: asma delikli karton, kırmızı cilt bandı (yıl yazar), kalınlığı görünen yaprak destesi ve kıvrık köşeli kâğıt dokulu yaprak.
-- Yaprakta büyük tarih: "16 Ekim, Cuma" ve "Yılın 290. günü" satırı
-- Gün değiştirme: oklar, yana kaydırma veya klavyede sol/sağ ok. İleri giderken yaprak perforasyondan koparılıp düşer; geri giderken önceki yaprak yukarıdan yerine iner. Kaydırırken yaprak parmağı izleyerek köşesinden kalkar.
-- **Günün bilgisi kartı:** Başlık, 2–3 cümle ve "Kaynak" linki
-- Sekmeler: Olaylar · Doğumlar · Ölümler
+- Görünüm bir almanak (gazete) sayfasıdır: krem kâğıt zemin, mürekkep siyahı yazı, tek vurgu rengi kırmızı. Başlıklar Playfair Display, metin Source Serif 4; bölümler gölgeli kartlarla değil çizgilerle ayrılır.
+- Üstte manşet: "Mindmash" ve altında italik alt başlık, çift çizgiyle kapanır.
+- Tarih satırı: büyük kırmızı gün sayısı, yanında "Ekim 2026" ve haftanın günü (pazar kırmızı), altında "Yılın 290. günü" satırı.
+- Gün değiştirme: oklar, yana kaydırma veya klavyede sol/sağ ok. İleri giderken sayfa sol kenarından kitap sayfası gibi çevrilir; geri giderken önceki sayfa geri kapanır. Kaydırırken sayfa parmağı izleyerek dönmeye başlar.
+- **Günün bilgisi:** Sayfanın baş yazısı. Kırmızı küçük etiket ("Günün bilgisi · Kategori"), başlık, büyük kırmızı ilk harfle 2–3 cümle ve "Kaynağı aç" linki
+- Altında iki sütunlu köşeler: "Günün soruları" ve (yalnızca bugünün sayfasında) "Günün kelimesi". Soru köşesi durumu söyler: "Üç soru seni bekliyor", "Öğlen sorusu açıldı", "Sıradaki soru 12:00'de açılır" ya da "2/3 doğru"; seri varsa altında "4 günlük seri" yazar. Kelime köşesi Kelime sekmesine gider.
+- "Tarihte bugün" başlığı, sekmeler: Olaylar · Doğumlar · Ölümler
 - Kategori çipleri (çoklu seçim, tercih yerel olarak hatırlanır)
-- Kronolojik olay listesi. Her satırda yıl, "X yıl önce" ve başlık yer alır.
-- Alt kısımda günün soruları şeridi ve seri göstergesi. Şerit durumu söyler: "Günün üç sorusunu çöz", "Öğlen sorusu açıldı", "Sıradaki soru 12:00'de açılır" ya da "Günün soruları: 2/3 doğru".
-- Bugünün yaprağında ikinci şerit: "Günün kelimesini bul" (Kelime sekmesine gider).
+- Kronolojik olay listesi. Her satırda yıl, başlık ve altında italik "Kategori · X yıl önce" yer alır.
 
 ### 5.2 Olay detayı
 - Yıl, başlık, açıklama (en fazla 600 karakter)
@@ -514,7 +514,7 @@ export const hataBildir = (olay_id, not_metni) =>
 
 **Ses ve hareket:**
 - Ses efektleri `src/lib/ses.ts` içinde Web Audio ile anında üretilir; ses dosyası yoktur. Yaprak koparma (kâğıt yırtılması), geri alma, düğme tıkı, quiz doğru/yanlış ve tamamlama sesleri vardır. Ayarlardan kapatılabilir.
-- Animasyonlar yalnızca kullanıcı eylemine yanıt verir: yaprak koparma/iniş, quiz seçeneklerinde onay ve sallanma, 3/3 sonucunda kısa konfeti. `prefers-reduced-motion` açıksa geçiş kopyaları hiç oluşturulmaz ve CSS bütün animasyonları kapatır.
+- Animasyonlar yalnızca kullanıcı eylemine yanıt verir: sayfa çevirme/geri kapanma, quiz seçeneklerinde onay ve sallanma, 3/3 sonucunda kısa konfeti. `prefers-reduced-motion` açıksa geçiş kopyaları hiç oluşturulmaz ve CSS bütün animasyonları kapatır.
 
 **"X yıl önce" hesabı:** `bugunYil - yil`. MÖ yıllar için "MÖ 44" biçiminde gösterilir.
 
