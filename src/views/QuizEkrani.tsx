@@ -5,6 +5,8 @@ import { quizKaydet, quizKaydi, seri } from '../lib/quizDepo'
 import { paylas } from '../lib/platform'
 import type { QuizSorusu } from '../lib/tipler'
 import { GeriDugmesi } from '../components/GeriDugmesi'
+import { Konfeti } from '../components/Konfeti'
+import { sesCal } from '../lib/ses'
 
 const HARF = ['A', 'B', 'C', 'D']
 
@@ -16,6 +18,7 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
   const [sira, setSira] = useState(0)
   const [cevaplar, setCevaplar] = useState<number[]>([])
   const [paylasimNotu, setPaylasimNotu] = useState('')
+  const [yeniBitti, setYeniBitti] = useState(false)
 
   useEffect(() => {
     gunuGetir(tarih)
@@ -56,10 +59,11 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
     const paylasimMetni = `Takvim Yaprağı, ${baslik.replace(' soruları', '')}: ${kayit.dogru}/3 ${isaretler}`
     return (
       <div className="sayfa quiz">
+        {yeniBitti && kayit.dogru === 3 && <Konfeti />}
         <GeriDugmesi />
         <h1>{baslik}</h1>
         <p className="quiz-skor">
-          <span className="quiz-skor-sayi">{kayit.dogru}/3</span>
+          <span className={`quiz-skor-sayi${yeniBitti ? ' quiz-skor-yeni' : ''}`}>{kayit.dogru}/3</span>
           {tarih === bugun() && seri() > 0 && <span className="seri">{seri()} günlük seri</span>}
         </p>
         <ol className="quiz-ozet">
@@ -109,16 +113,20 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
     const yeni = [...cevaplar]
     yeni[sira] = i
     setCevaplar(yeni)
+    sesCal(i === soru.dogru_index ? 'dogru' : 'yanlis')
   }
 
   const ilerle = () => {
     if (sira < 2) {
+      sesCal('tik')
       setSira(sira + 1)
       return
     }
     const dogru = sorular.filter((s, i) => cevaplar[i] === s.dogru_index).length
     const yeni = { cevaplar, dogru, cozulme: bugun() }
     quizKaydet(tarih, yeni)
+    sesCal(dogru >= 2 ? 'tamam' : 'tik')
+    setYeniBitti(true)
     setKayit(yeni)
   }
 
@@ -134,7 +142,9 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
           />
         ))}
       </p>
-      <h2 className="quiz-soru">{soru.soru}</h2>
+      <h2 key={sira} className="quiz-soru">
+        {soru.soru}
+      </h2>
       <div className="quiz-secenekler">
         {soru.secenekler.map((s, i) => {
           let sinif = 'secenek'

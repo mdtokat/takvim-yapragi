@@ -75,7 +75,9 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 ## 5. Ekranlar
 
 ### 5.1 Bugün (ana ekran)
-- Üstte büyük tarih: "16 Ekim, Cuma"
+- Üstte gerçek bir duvar takvimi bloğu: asma delikli karton, kırmızı cilt bandı (yıl yazar), kalınlığı görünen yaprak destesi ve kıvrık köşeli kâğıt dokulu yaprak.
+- Yaprakta büyük tarih: "16 Ekim, Cuma" ve "Yılın 290. günü" satırı
+- Gün değiştirme: oklar, yana kaydırma veya klavyede sol/sağ ok. İleri giderken yaprak perforasyondan koparılıp düşer; geri giderken önceki yaprak yukarıdan yerine iner. Kaydırırken yaprak parmağı izleyerek köşesinden kalkar.
 - **Günün bilgisi kartı:** Başlık, 2–3 cümle ve "Kaynak" linki
 - Sekmeler: Olaylar · Doğumlar · Ölümler
 - Kategori çipleri (çoklu seçim, tercih yerel olarak hatırlanır)
@@ -100,7 +102,7 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 ### 5.5 Ayarlar
 - Bildirim açık/kapalı ve saat seçimi
 - Varsayılan kategori filtreleri
-- Tema
+- Tema ve ses efektleri açık/kapalı (varsayılan açık)
 - Hakkında, gizlilik politikası linki, "İçerik yapay zekâ ile hazırlanır ve kaynaklarla doğrulanır" notu
 
 ---
@@ -431,6 +433,10 @@ export const hataBildir = (olay_id, not_metni) =>
 - Uygulama açıldığında sonraki 7 günün `tt_gunun_bilgisi` kayıtları ön yüklenir (bildirimler için).
 
 **Yerel veriler (localStorage):** Quiz sonuçları ve seri, kategori tercihleri, tema, bildirim saati. MVP'de hesap yoktur.
+
+**Ses ve hareket:**
+- Ses efektleri `src/lib/ses.ts` içinde Web Audio ile anında üretilir; ses dosyası yoktur. Yaprak koparma (kâğıt yırtılması), geri alma, düğme tıkı, quiz doğru/yanlış ve tamamlama sesleri vardır. Ayarlardan kapatılabilir.
+- Animasyonlar yalnızca kullanıcı eylemine yanıt verir: yaprak koparma/iniş, quiz seçeneklerinde onay ve sallanma, 3/3 sonucunda kısa konfeti. `prefers-reduced-motion` açıksa geçiş kopyaları hiç oluşturulmaz ve CSS bütün animasyonları kapatır.
 
 **"X yıl önce" hesabı:** `bugunYil - yil`. MÖ yıllar için "MÖ 44" biçiminde gösterilir.
 

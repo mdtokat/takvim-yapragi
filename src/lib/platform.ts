@@ -20,3 +20,12 @@ export async function paylas(metin: string): Promise<'paylasildi' | 'kopyalandi'
     return 'olmadi'
   }
 }
+
+/** Kullanıcı sistemde hareketi azaltmayı seçtiyse animasyonlu geçişler atlanır. */
+export function hareketAzalt(): boolean {
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  } catch {
+    return false
+  }
+}
