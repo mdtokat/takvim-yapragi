@@ -12,9 +12,9 @@ import '@fontsource/source-serif-4/latin-600.css'
 import '@fontsource/source-serif-4/latin-ext-600.css'
 import './styles.css'
 import App from './App'
-import { ayarlariOku, temayiUygula } from './lib/ayarlar'
+import { gorunumuUygula } from './lib/ayarlar'
 
-temayiUygula(ayarlariOku().tema)
+gorunumuUygula()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

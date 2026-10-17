@@ -5,10 +5,10 @@ def imzaDosyasi = System.getenv("ANDROID_KEYSTORE_PATH")
 def surumKodu = (System.getenv("VERSION_CODE") ?: "1").toInteger()
 
 android {
-    namespace = "io.github.mdtokat.takvimyapragi"
+    namespace = "io.github.mdtokat.mindmash"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "io.github.mdtokat.takvimyapragi"
+        applicationId "io.github.mdtokat.mindmash"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode surumKodu

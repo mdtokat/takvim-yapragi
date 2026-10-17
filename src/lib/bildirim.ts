@@ -13,7 +13,8 @@ export async function izinIste(): Promise<boolean> {
 }
 
 /**
- * Önümüzdeki 7 günün bildirimlerini yeniden planlar. Başlık, o günün bilgisinin başlığıdır.
+ * Önümüzdeki 7 günün bildirimlerini yeniden planlar. Başlık, o günün bilgisinin başlığıdır;
+ * tek hatırlatma günün yaprağını, kelimesini ve sorularını birlikte duyurur.
  * Uygulama her açıldığında çağrılır; kullanıcı uzun süre açmazsa bildirimler kendiliğinden durur.
  */
 export async function bildirimleriPlanla(): Promise<void> {
@@ -46,7 +47,7 @@ export async function bildirimleriPlanla(): Promise<void> {
       liste.push({
         id: Number(tarih.replaceAll('-', '').slice(2)), // ör. 261017
         title: bilgi ? bilgi.baslik : 'Bugün tarihte neler oldu?',
-        body: bilgi ? 'Günün bilgisi ve tarihte bugün seni bekliyor.' : 'Yeni takvim yaprağın hazır.',
+        body: 'Günün yaprağı ve kelimesi hazır. Sorular videolarla birlikte açılıyor.',
         schedule: { at: d, allowWhileIdle: true },
       })
     }

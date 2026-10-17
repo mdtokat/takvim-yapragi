@@ -3,7 +3,7 @@ import { ayarlariGuncelle, useAyarlar, type Tema } from '../lib/ayarlar'
 import { bildirimleriPlanla, izinIste } from '../lib/bildirim'
 import { linkAc, yerelUygulama } from '../lib/platform'
 import { KategoriSecici } from '../components/KategoriSecici'
-import { SITE_URL, SURUM } from '../lib/sabitler'
+import { SITE_URL, SOSYAL_HESAPLAR, SURUM, UYGULAMA_ADI } from '../lib/sabitler'
 import { sesCal } from '../lib/ses'
 
 const TEMALAR: { id: Tema; ad: string }[] = [
@@ -22,7 +22,7 @@ export function AyarlarEkrani() {
     if (acik) {
       const izin = await izinIste()
       if (!izin) {
-        setIzinNotu('Bildirim izni verilmedi. Telefonun ayarlarından Takvim Yaprağı için bildirimleri açabilirsin.')
+        setIzinNotu(`Bildirim izni verilmedi. Telefonun ayarlarından ${UYGULAMA_ADI} için bildirimleri açabilirsin.`)
         return
       }
     }
@@ -65,7 +65,7 @@ export function AyarlarEkrani() {
         {yerel ? (
           <>
             <label className="anahtar-satir">
-              <span>Her gün takvim yaprağını hatırlat</span>
+              <span>Her gün yaprağı ve kelimeyi hatırlat</span>
               <input
                 type="checkbox"
                 role="switch"
@@ -94,6 +94,26 @@ export function AyarlarEkrani() {
       </section>
 
       <section className="ayar-bolum">
+        <h2>Kelime oyunu</h2>
+        <label className="anahtar-satir">
+          <span>
+            Zor mod
+            <small className="aciklama kucuk ayar-not">
+              Bulduğun ipuçlarını sonraki tahminlerde kullanmak zorundasın. Oyun başladıysa değişiklik ertesi gün geçerli olur.
+            </small>
+          </span>
+          <input type="checkbox" role="switch" checked={ayar.zorMod} onChange={(e) => ayarlariGuncelle({ zorMod: e.target.checked })} />
+        </label>
+        <label className="anahtar-satir">
+          <span>
+            Renk körü modu
+            <small className="aciklama kucuk ayar-not">Yeşil ve sarı yerine turuncu ve mavi kullanılır.</small>
+          </span>
+          <input type="checkbox" role="switch" checked={ayar.renkKoru} onChange={(e) => ayarlariGuncelle({ renkKoru: e.target.checked })} />
+        </label>
+      </section>
+
+      <section className="ayar-bolum">
         <h2>Gösterilen kategoriler</h2>
         <p className="aciklama">Seçtiğin kategoriler bugünün yaprağında filtre olarak uygulanır.</p>
         <KategoriSecici secili={ayar.kategoriler} onDegis={(k) => ayarlariGuncelle({ kategoriler: k })} />
@@ -102,10 +122,16 @@ export function AyarlarEkrani() {
       <section className="ayar-bolum">
         <h2>Hakkında</h2>
         <p className="aciklama">
-          Takvim Yaprağı'ndaki içerik yapay zekâ ile hazırlanır ve her kayıt bir kaynakla doğrulanır. Bir hata görürsen kaydın
+          {UYGULAMA_ADI}'teki içerik yapay zekâ ile hazırlanır ve her kayıt bir kaynakla doğrulanır. Günün soruları ve kelimesi
+          o günün {UYGULAMA_ADI} videolarından gelir; her soru kendi videosuyla aynı saatte açılır. Bir hata görürsen kaydın
           sayfasındaki "Hata bildir" ile haber ver; kayıt yeniden kontrol edilir.
         </p>
         <div className="dugme-grubu">
+          {SOSYAL_HESAPLAR.map((h) => (
+            <button key={h.ad} className="dugme dugme-ikincil" onClick={() => void linkAc(h.url)}>
+              {h.ad}
+            </button>
+          ))}
           <button className="dugme dugme-ikincil" onClick={() => void linkAc(`${SITE_URL}gizlilik.html`)}>
             Gizlilik politikası
           </button>

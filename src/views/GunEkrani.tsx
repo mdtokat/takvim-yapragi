@@ -1,15 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { gunuGetir, onbellektekiGun, rastgeleDoluGun } from '../lib/api'
-import { bugun, gunEkle, tarihCoz, artikYil } from '../lib/tarih'
+import { bugun, gunEkle, tarihCoz, artikYil, saatteMetni } from '../lib/tarih'
 import { degistir, git } from '../lib/yonlendirme'
 import { ayarlariGuncelle, useAyarlar } from '../lib/ayarlar'
-import { quizKaydi, seri } from '../lib/quizDepo'
+import { cevabi, cevapSayisi, quizKaydi, quizTamam, seri, soruDurumlari, useAcilisYenile, type QuizKaydi, type SoruDurumu } from '../lib/quizDepo'
+import { SLOT_ADI } from '../lib/sabitler'
 import { TURLER, type GunVerisi, type GununBilgisi, type Tur } from '../lib/tipler'
 import { sesCal } from '../lib/ses'
 import { hareketAzalt } from '../lib/platform'
 import { Yaprak } from '../components/Yaprak'
 import { OlayListesi } from '../components/OlayListesi'
 import { KategoriSecici } from '../components/KategoriSecici'
+
+function seritMetni(durumlar: SoruDurumu[], kayit: QuizKaydi | null): string {
+  if (quizTamam(kayit)) return `Günün soruları: ${kayit!.dogru}/3 doğru`
+  const acik = durumlar.filter((d) => d.soru && cevabi(kayit, d) === null)
+  if (acik.length === 3) return 'Günün üç sorusunu çöz'
+  if (acik.length > 0) return acik[0].slot ? `${SLOT_ADI[acik[0].slot]} sorusu açıldı` : 'Sıradaki soruyu çöz'
+  const siradaki = durumlar.find((d) => !d.soru)
+  if (siradaki?.acilis) return `${cevapSayisi(kayit) ? 'Sıradaki' : 'İlk'} soru ${saatteMetni(siradaki.acilis)} açılır`
+  return 'Günün soruları'
+}
 
 interface Gecis {
   no: number
@@ -97,7 +108,9 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
 
   const gosterilen = filtreli.filter((o) => o.tur === tur)
   const veri = durum.veri
-  const quizHazir = !!veri && veri.quiz.length === 3 && tarih <= bugun()
+  const durumlar = useMemo(() => soruDurumlari(veri), [veri])
+  useAcilisYenile(durumlar, () => setDeneme((n) => n + 1))
+  const quizHazir = durumlar.length === 3 && tarih <= bugun()
   const quizSonucu = quizKaydi(tarih)
   const buYil = tarihCoz(tarih)!.getFullYear() === new Date().getFullYear()
 
@@ -146,10 +159,14 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
 
       {quizHazir && (
         <a className="quiz-serit" href={`#/quiz/${tarih}`}>
-          <span className="quiz-serit-metin">
-            {quizSonucu ? `Günün soruları: ${quizSonucu.dogru}/3 doğru` : 'Günün üç sorusunu çöz'}
-          </span>
+          <span className="quiz-serit-metin">{seritMetni(durumlar, quizSonucu)}</span>
           {tarih === bugun() && seri() > 0 && <span className="seri">{seri()} günlük seri</span>}
+        </a>
+      )}
+
+      {tarih === bugun() && (
+        <a className="quiz-serit quiz-serit-ikincil" href="#/kelime">
+          <span className="quiz-serit-metin">Günün kelimesini bul</span>
         </a>
       )}
 

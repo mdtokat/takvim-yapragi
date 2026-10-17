@@ -1,3 +1,5 @@
+import type { Slot } from './sabitler'
+
 export type Kategori = 'bilim' | 'teknoloji' | 'muhendislik' | 'turkiye' | 'dunya' | 'spor' | 'sanat' | 'kesif'
 export type Tur = 'olay' | 'dogum' | 'olum'
 
@@ -47,10 +49,24 @@ export interface QuizSorusu {
   secenekler: string[]
   dogru_index: number
   aciklama: string | null
+  // Videodan gelen sorularda dolu; eski (tarihte bugün) sorularda boş.
+  slot: Slot | null
+  acilis: string | null
+  video_baslik: string | null
+  video_url: string | null
+  kaynak_url: string | null
+}
+
+/** Sorunun metni olmadan açılış bilgisi; kilitli sorular için de döner. */
+export interface QuizPlani {
+  sira: number
+  slot: Slot | null
+  acilis: string | null
 }
 
 export interface GunVerisi {
   olaylar: Olay[]
   bilgi: GununBilgisi | null
-  quiz: QuizSorusu[]
+  quiz: QuizSorusu[] // yalnızca açılmış sorular
+  plan?: QuizPlani[] // eski önbellek kayıtlarında yok
 }

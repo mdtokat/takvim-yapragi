@@ -1,16 +1,20 @@
-# Takvim Yaprağı
+# Mindmash
 
-Her gün tarihte o gün olanları, günün bilgisini ve üç soruluk bir quiz'i gösteren uygulama. Web'de GitHub Pages üzerinden, Android'de Google Play üzerinden yayınlanır. İçeriği Claude zamanlanmış görevleri üretir ve Supabase'e yazar; uygulama yalnızca okur.
+Mindmash sosyal medya hesaplarının uygulaması. Her gün tarihte o gün olanları, günün bilgisini, günün kelimesini (6 denemede 5 harfli Türkçe kelime) ve o günün üç Reels videosundan hazırlanan soruları gösterir. Her soru kendi videosunun yayın saatinde açılır. Web'de GitHub Pages üzerinden, Android'de Google Play üzerinden yayınlanır. İçeriği Claude zamanlanmış görevleri `mdtokat/insta-face-youtube` deposundaki günlük planlardan üretir ve Supabase'e yazar; uygulama yalnızca okur (kelime oyunu tahminleri RPC ile değerlendirilir).
 
-Ayrıntılı tasarım: [docs/TASARIM.md](docs/TASARIM.md)
+Önceki adı Takvim Yaprağı. Kelime oyunu Harfiyen'den taşındı.
+
+Ayrıntılı tasarım: [docs/TASARIM.md](docs/TASARIM.md) · Kelime oyunu: [docs/KELIME_OYUNU.md](docs/KELIME_OYUNU.md)
 
 ## Yapı
 
 | Klasör | İçerik |
 |---|---|
-| `src/views` | Ekranlar: Bugün, olay detayı, takvim, quiz, ayarlar |
-| `src/components` | Yaprak, olay listesi, kategori seçici, alt menü |
-| `src/lib` | Supabase istemcisi, veri erişimi, tarih yardımcıları, bildirimler, ayarlar |
+| `src/views` | Ekranlar: Bugün, olay detayı, takvim, quiz, kelime, ayarlar |
+| `src/components` | Yaprak, olay listesi, kategori seçici, alt menü; `kelime/` altında ızgara, klavye ve pencereler |
+| `src/lib` | Supabase istemcisi, veri erişimi, tarih yardımcıları, bildirimler, ayarlar, kelime oyunu (`kelimeOyunu.ts`, `harfler.ts`, `istatistik.ts`) |
+| `supabase` | Göçler (`migrations/`) ve `kb_tahmin` testleri (`tests/`) |
+| `tests` | Harf kuralları ve tarih yardımcıları testleri (`npm test`) |
 | `public` | İkonlar ve `gizlilik.html` |
 | `android` | Capacitor Android projesi |
 | `.github/workflows` | Web yayını ve Android derlemesi |
@@ -22,6 +26,7 @@ Teknoloji: React + TypeScript + Vite, Supabase, Capacitor 8, vite-plugin-pwa.
 ```bash
 npm install
 npm run dev        # http://localhost:5173
+npm test           # birim testleri
 npm run build      # tip kontrolü + üretim derlemesi (dist/)
 ```
 
@@ -51,8 +56,10 @@ base64 -i upload-key.jks        # Mac
 
 ## Veritabanı
 
-Supabase projesi: `otomatik-uygulamalar` (`qjiurxkgzzlqqemkzgli`). Tablolar `tt_` önekiyle başlar; şema `docs/TASARIM.md` Bölüm 7'de. İstemci yalnızca okuma yapar; `tt_hata_bildirimleri` tablosuna yalnızca ekleme yapabilir.
+Supabase projesi: `otomatik-uygulamalar` (`qjiurxkgzzlqqemkzgli`). Takvim ve soru tabloları `tt_`, kelime oyunu tabloları `kb_` önekiyle başlar; şemalar `docs/TASARIM.md` Bölüm 7'de ve `docs/KELIME_OYUNU.md` Bölüm 9'da. İstemci `tt_` tablolarını yalnızca okur; `tt_hata_bildirimleri` tablosuna yalnızca ekleme yapabilir. Kelime oyunu tahminleri `kb_tahmin` RPC'siyle değerlendirilir; cevap istemciye oyun bitmeden gelmez.
+
+Kelime oyunu için **Authentication → Sign In / Providers → Anonymous sign-ins** açık olmalı.
 
 ## İçerik
 
-İçerik Claude zamanlanmış görevleriyle gelir (`docs/TASARIM.md` Bölüm 8). Görevler kurulup ilk kez çalıştırılana kadar uygulama "Bu günün yaprağı henüz hazırlanıyor" durumunu gösterir.
+İçerik Claude zamanlanmış görevleriyle gelir (`docs/TASARIM.md` Bölüm 8, `docs/KELIME_OYUNU.md` Bölüm 10). Sorular ve kelime `mdtokat/insta-face-youtube` deposundaki `daily-plans/kaynak/YYYY-AA-GG.yaml` planlarından yazılır; bu yüzden görevlerin o depoyu okuyabilmesi gerekir. Görevler kurulup ilk kez çalıştırılana kadar uygulama "Bu günün yaprağı henüz hazırlanıyor" durumunu gösterir.
