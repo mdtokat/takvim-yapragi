@@ -1,0 +1,76 @@
+name: Android derlemesi
+
+# Elle çalıştırılır (Actions > Android derlemesi > Run workflow) veya v1.0.0 gibi bir etiket gönderilince.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Web uygulamasını derle ve Android'e kopyala
+        run: |
+          npm ci
+          npm run build
+          npx cap sync android
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+
+      - name: İmza anahtarını hazırla
+        id: imza
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload-key.jks"
+            echo "var=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "var=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::İmza anahtarı eklenmemiş. Yalnızca telefonda denemek için test APK'sı üretilecek; Play için AAB üretilmeyecek."
+          fi
+
+      - name: Test APK'sı (telefona doğrudan kurulabilir)
+        working-directory: android
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Google Play için imzalı AAB
+        if: steps.imza.outputs.var == 'true'
+        working-directory: android
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/upload-key.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew bundleRelease --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+
+      - uses: actions/upload-artifact@v4
+        if: steps.imza.outputs.var == 'true'
+        with:
+          name: play-aab
+          path: android/app/build/outputs/bundle/release/*.aab
