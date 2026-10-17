@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'gizlilik.html'],
       manifest: {
-        name: 'Takvim Yaprağı',
-        short_name: 'Takvim Yaprağı',
-        description: 'Her gün tarihte o gün olanlar, günün bilgisi ve üç soruluk quiz.',
+        name: 'Mindmash',
+        short_name: 'Mindmash',
+        description: 'Her gün tarihte o gün olanlar, günün bilgisi, günün kelimesi ve videolarla açılan üç soru.',
         lang: 'tr',
         start_url: './',
         scope: './',

@@ -44,3 +44,47 @@ export function yilOnce(yil: number, simdi = new Date().getFullYear()): string {
 export function yilinGunu(d: Date): number {
   return (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 1)) / 86400000 + 1
 }
+
+// ===== Kelime oyunu: oyun günü Türkiye saatiyle değişir (UTC+3, yaz saati uygulanmaz) =====
+const TR_OFSET_MS = 3 * 60 * 60 * 1000
+
+/** Bulmaca numarası 1'den başlar. */
+export const BASLANGIC = '2026-10-17'
+
+export function trBugun(simdi = new Date()): string {
+  const d = new Date(simdi.getTime() + TR_OFSET_MS)
+  return `${d.getUTCFullYear()}-${iki(d.getUTCMonth() + 1)}-${iki(d.getUTCDate())}`
+}
+
+export function gunFarki(a: string, b: string): number {
+  return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000)
+}
+
+export const bulmacaNo = (tarih: string) => gunFarki(BASLANGIC, tarih) + 1
+
+/** Türkiye saatiyle bir sonraki gece yarısına kalan milisaniye. */
+export function geceYarisinaKalan(simdi = new Date()): number {
+  const yarin = gunEkle(trBugun(simdi), 1)
+  return Date.parse(`${yarin}T00:00:00Z`) - TR_OFSET_MS - simdi.getTime()
+}
+
+export function sureMetni(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000))
+  return `${iki(Math.floor(s / 3600))}:${iki(Math.floor((s % 3600) / 60))}:${iki(s % 60)}`
+}
+
+/** Bir zaman damgasını cihazın yerel saatiyle "HH:MM" yazar. */
+export function saatMetni(zaman: string): string {
+  const d = new Date(zaman)
+  return `${iki(d.getHours())}:${iki(d.getMinutes())}`
+}
+
+/** "12:00'de", "19:00'da": bulunma eki saatin okunuşundaki son kelimeye uyar. */
+export function saatteMetni(zaman: string): string {
+  const saat = saatMetni(zaman)
+  const [s, d] = saat.split(':').map(Number)
+  const n = d > 0 ? d : s
+  const BIRLER = ['', 'de', 'de', 'te', 'te', 'te', 'da', 'de', 'de', 'da'] // bir, iki, üç, dört, beş, altı, yedi, sekiz, dokuz
+  const ONLAR = ['da', 'da', 'de', 'da', 'ta', 'de'] // sıfır, on, yirmi, otuz, kırk, elli
+  return `${saat}'${n % 10 ? BIRLER[n % 10] : ONLAR[Math.floor(n / 10)]}`
+}

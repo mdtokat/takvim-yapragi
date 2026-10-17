@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
-  appId: 'io.github.mdtokat.takvimyapragi',
-  appName: 'Takvim Yaprağı',
+  appId: 'io.github.mdtokat.mindmash',
+  appName: 'Mindmash',
   webDir: 'dist',
   plugins: {
     LocalNotifications: {

@@ -1,9 +1,10 @@
 import { supabase } from './supabase'
 import { oku, yaz } from './depo'
 import { tarihCoz } from './tarih'
-import type { GunVerisi, GununBilgisi, Olay } from './tipler'
+import type { GunVerisi, GununBilgisi, Olay, QuizPlani } from './tipler'
 
 const OLAY_ALANLARI = 'id, ay, gun, yil, tur, baslik, aciklama, kategori, kaynak_url'
+const QUIZ_ALANLARI = 'id, tarih, sira, soru, secenekler, dogru_index, aciklama, slot, acilis, video_baslik, video_url, kaynak_url'
 
 export interface GunSonucu {
   veri: GunVerisi
@@ -18,10 +19,12 @@ export async function gunuGetir(tarih: string): Promise<GunSonucu> {
   const ay = d.getMonth() + 1
   const gun = d.getDate()
   try {
-    const [olaylar, bilgi, quiz] = await Promise.all([
+    const [olaylar, bilgi, quiz, plan] = await Promise.all([
       supabase.from('tt_olaylar').select(OLAY_ALANLARI).eq('ay', ay).eq('gun', gun).order('yil'),
       supabase.from('tt_gunun_bilgisi').select('tarih, baslik, metin, kategori, kaynak_url').eq('tarih', tarih).maybeSingle(),
-      supabase.from('tt_quiz').select('id, tarih, sira, soru, secenekler, dogru_index, aciklama').eq('tarih', tarih).order('sira'),
+      // Videosu henüz yayınlanmamış sorular RLS ile gizlenir; açılış saatleri ayrı fonksiyondan gelir.
+      supabase.from('tt_quiz').select(QUIZ_ALANLARI).eq('tarih', tarih).order('sira'),
+      supabase.rpc('tt_quiz_takvimi', { p_tarih: tarih }),
     ])
     const hata = olaylar.error ?? bilgi.error ?? quiz.error
     if (hata) throw hata
@@ -29,6 +32,8 @@ export async function gunuGetir(tarih: string): Promise<GunSonucu> {
       olaylar: (olaylar.data ?? []) as Olay[],
       bilgi: (bilgi.data ?? null) as GununBilgisi | null,
       quiz: (quiz.data ?? []) as GunVerisi['quiz'],
+      // Fonksiyon yoksa veya hata verirse açılmış sorulardan türetilir.
+      plan: plan.error ? undefined : ((plan.data ?? []) as QuizPlani[]),
     }
     yaz(`gun:${tarih}`, veri)
     return { veri, onbellekten: false }

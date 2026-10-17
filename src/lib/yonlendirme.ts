@@ -5,6 +5,7 @@ export type Rota =
   | { ad: 'olay'; id: number }
   | { ad: 'takvim'; ay: string | null }
   | { ad: 'quiz'; tarih: string }
+  | { ad: 'kelime' }
   | { ad: 'ayarlar' }
 
 export function rotaCoz(hash: string): Rota {
@@ -18,6 +19,8 @@ export function rotaCoz(hash: string): Rota {
       return { ad: 'takvim', ay: parca[1] ?? null }
     case 'quiz':
       return parca[1] ? { ad: 'quiz', tarih: parca[1] } : { ad: 'gun', tarih: null }
+    case 'kelime':
+      return { ad: 'kelime' }
     case 'ayarlar':
       return { ad: 'ayarlar' }
     default:

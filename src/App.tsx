@@ -8,6 +8,7 @@ import { GunEkrani } from './views/GunEkrani'
 import { OlayEkrani } from './views/OlayEkrani'
 import { TakvimEkrani } from './views/TakvimEkrani'
 import { QuizEkrani } from './views/QuizEkrani'
+import { KelimeEkrani } from './views/KelimeEkrani'
 import { AyarlarEkrani } from './views/AyarlarEkrani'
 import { AltMenu } from './components/AltMenu'
 
@@ -18,11 +19,13 @@ export default function App() {
     void bildirimleriPlanla()
   }, [])
 
-  // Android geri tuşu: önce uygulama içi geçmiş, sonra çıkış.
+  // Android geri tuşu: önce açık pencere, sonra uygulama içi geçmiş, en son çıkış.
   useEffect(() => {
     if (!yerelUygulama()) return
     const dinleyici = CapApp.addListener('backButton', ({ canGoBack }) => {
-      if (canGoBack && window.location.hash && window.location.hash !== '#/') history.back()
+      const pencere = document.querySelector('dialog[open]')
+      if (pencere) pencere.dispatchEvent(new Event('cancel', { cancelable: true }))
+      else if (canGoBack && window.location.hash && window.location.hash !== '#/') history.back()
       else void CapApp.exitApp()
     })
     return () => {
@@ -41,6 +44,9 @@ export default function App() {
     case 'quiz':
       icerik = <QuizEkrani tarih={rota.tarih} />
       break
+    case 'kelime':
+      icerik = <KelimeEkrani />
+      break
     case 'ayarlar':
       icerik = <AyarlarEkrani />
       break
@@ -48,7 +54,7 @@ export default function App() {
       icerik = <GunEkrani tarih={rota.tarih ?? bugun()} />
   }
 
-  const sekme = rota.ad === 'takvim' ? 'takvim' : rota.ad === 'ayarlar' ? 'ayarlar' : 'bugun'
+  const sekme = rota.ad === 'takvim' || rota.ad === 'kelime' || rota.ad === 'ayarlar' ? rota.ad : 'bugun'
 
   return (
     <div className="uygulama">

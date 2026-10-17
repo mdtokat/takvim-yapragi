@@ -1,4 +1,4 @@
-package io.github.mdtokat.takvimyapragi;
+package io.github.mdtokat.mindmash;
 
 import com.getcapacitor.BridgeActivity;
 
