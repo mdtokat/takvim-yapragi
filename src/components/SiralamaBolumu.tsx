@@ -69,7 +69,10 @@ export function SiralamaBolumu() {
             <AdFormu onKaydedildi={() => setForm(false)} />
           ) : cikisOnayi ? (
             <div className="hesap-onay">
-              <p>Sıralamadaki adın ve bütün puanların silinecek. Oyunlar süresiz ve puansız oynanmaya devam eder.</p>
+              <p>
+                Sıralamadaki adın ve bütün puanların silinecek. Oyunlar süresiz ve puansız oynanmaya devam eder. Bugün yeniden katılsan
+                da bugünün soruları ve kelimeleri sıralamaya girmez.
+              </p>
               <div className="dugme-grubu">
                 <button className="dugme" disabled={mesgul} onClick={() => void cik()}>
                   Evet, sıralamadan çık

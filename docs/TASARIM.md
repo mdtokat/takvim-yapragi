@@ -125,7 +125,7 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 - Alt menüde "Sıralama" sekmesi (`#/siralama/kelime`, `#/siralama/quiz`). Kelime ve sorular ayrı sekmelerdir; her birinde "Bugün" ve "Bu hafta" seçilir.
 - Hafta Türkiye saatiyle pazartesi 00:00'da başlar ve pazar biter (yeni haftada liste boş başlar; eski puanlar silinmez).
 - Liste ilk 50 oyuncuyu gösterir; oyuncu listede değilse altta "Sen: 132. sıra · 412 puan" yazar. Eşit puanda toplam süresi kısa olan öndedir.
-- **Katılım:** Google ile girişten sonra bir pencere sorar: "Sıralamada hangi adla görünmek istersin?" Instagram kullanıcı adı (@ ile) veya Facebook'taki ad yazılır; adın herkese görüneceği söylenir. "Şimdilik sıralamaya girme" ile atlanabilir; Ayarlar > Sıralama'dan sonra katılınır, ad değiştirilir (haftada bir; ilk 15 dakika serbest) veya sıralamadan çıkılır (ad ve puanlar silinir).
+- **Katılım:** Google ile girişten sonra bir pencere sorar: "Sıralamada hangi adla görünmek istersin?" Instagram kullanıcı adı (@ ile) veya Facebook'taki ad yazılır; adın herkese görüneceği söylenir. "Şimdilik sıralamaya girme" ile atlanabilir; Ayarlar > Sıralama'dan sonra katılınır, ad değiştirilir (haftada bir; ilk 15 dakika serbest) veya sıralamadan çıkılır (ad ve puanlar silinir). Çıkan oyuncu aynı gün yeniden katılırsa o günün soruları ve kelimeleri sıralamaya girmez (cevaplarını bildiği oyunları yeniden puanlı oynamasın diye).
 - **Süre:** Sıralamaya katılan oyuncu yalnızca bugünün sorularını ve kelimelerini süreli oynar. Süre "Başla"ya basınca sunucuda başlar, uygulamadan çıkılsa da durmaz; sunucu ağ gecikmesi için 2 saniye tolerans tanır. Cihazda süresiz oynanmaya başlanmış kelime sıralamaya girmez. Katılmayanlar ve geçmiş günler süresiz ve puansız oynanır.
 - **Puan:**
   - Soru (30 sn): doğru cevap 50 puan + kalan her saniye 1 puan (en çok 80). Yanlış veya süre dolarsa 0.
@@ -314,13 +314,15 @@ tt_oyuncular (uid text pk, ad, ad_turu 'instagram'|'facebook', ad_anahtar unique
 tt_quiz_puanlari (uid, tarih, sira, baslangic, cevap_zamani, secim, dogru, puan)   -- pk (uid, tarih, sira)
 kb_puanlar       (uid, tarih, slot, baslangic, bitis, tahminler[], durum, puan)    -- pk (uid, tarih, slot)
 -- Puan tabloları tt_oyuncular'a on delete cascade ile bağlıdır.
+tt_siralama_cikislari (uid_ozet, tarih)   -- sıralamadan çıkış günü; uid'nin sha256 özeti, gün sonuna kadar
+                                          -- (göç 20261019200000_mindmash_siralama_cikis.sql)
 ```
 
 | Fonksiyon | Ne yapar |
 |---|---|
 | `tt_oyuncu()` | Kendi adı ve durumu (yoksa null) |
 | `tt_oyuncu_kaydet(ad, tur)` | Adı doğrular ve kaydeder. Hatalar: `ad_gecersiz`, `ad_alinmis`, `ad_degisim_siniri` |
-| `tt_oyuncu_sil()` | Adı ve bütün puanları siler (sıralamadan çıkma, hesap silme) |
+| `tt_oyuncu_sil()` | Adı ve bütün puanları siler (sıralamadan çıkma, hesap silme). Kimliğin özetini (sha256) çıkış günüyle `tt_siralama_cikislari`'na yazar; o gün `tt_quiz_durum` ve `kb_sirali_durum` yeni süre başlatmaz (`gun_disi`). Eski özetler sonraki çıkışta silinir |
 | `tt_quiz_durum(tarih, sira, baslat)` | Sıralamaya giren sorunun durumu; `baslat` ile süreyi başlatır (yalnızca bugünün açılmış sorusu). Süresi dolmuşsa sonuçlandırır |
 | `tt_quiz_cevapla(tarih, sira, secim)` | Cevabı değerlendirir ve doğru seçeneği döner. Başlatılmış sıralı soruda süre ve puanı kaydeder (`secim` null: süre doldu); diğer durumda yalnızca sonuç döner |
 | `kb_sirali_durum(tarih, slot, baslat)` | Sıralamaya giren kelimenin durumu ve tahminlerin renkleri; `baslat` ile süreyi başlatır |

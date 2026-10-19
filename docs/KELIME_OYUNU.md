@@ -544,7 +544,7 @@ Takma ad yerine Instagram kullanıcı adı veya Facebook'taki ad kullanılır ve
 
 - Sıralamaya katılan oyuncu bugünün kelimelerini 90 saniyede oynar. Süre "Başla"ya basınca `kb_sirali_durum` ile sunucuda başlar; tahminler durumlu `kb_sirali_tahmin` fonksiyonunda değerlendirilir ve `kb_puanlar` tablosunda tutulur (durumsuz `kb_degerlendir` sıralama dışında kullanılmaya devam eder).
 - **Puan:** 1. denemede 100, sonra 80, 60, 40, 25, 10; bulunamazsa veya süre dolarsa 0. Bulunursa kalan sürenin her 3 saniyesi için 1 puan eklenir (en çok 30).
-- Cihazda süresiz oynanmaya başlanmış kelime sıralamaya girmez. Geçmiş günler puan getirmez.
+- Cihazda süresiz oynanmaya başlanmış kelime sıralamaya girmez. Geçmiş günler puan getirmez. Sıralamadan çıkıp aynı gün yeniden katılan oyuncunun o günkü kelimeleri sıralamaya girmez.
 - Adlar kelime bakım görevinde denetlenir (`docs/gorevler/kelime-bakim.md` ADIM 4).
 
 ### 13.2 Bağlantılar modu
