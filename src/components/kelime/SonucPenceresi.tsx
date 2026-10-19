@@ -2,16 +2,18 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Pencere } from './Pencere'
 import type { Istatistik } from '../../lib/istatistik'
 import type { BitisBilgisi, Satir } from '../../lib/kelimeOyunu'
-import { genelDagilim } from '../../lib/kelimeOyunu'
 import { bulmacaNo, sureMetni } from '../../lib/tarih'
 import { linkAc, paylas } from '../../lib/platform'
-import { zorModOyunu, useAyarlar } from '../../lib/ayarlar'
+import { useAyarlar } from '../../lib/ayarlar'
+import { useHesap } from '../../lib/hesap'
+import { git } from '../../lib/yonlendirme'
 import { SITE_URL, SLOT_ADI, UYGULAMA_ADI, VIDEO_VARSAYILAN_URL, type Slot } from '../../lib/sabitler'
 
 interface Props {
   tarih: string
   slot: Slot | null
   sonrakiAcilis: number // ms; geri sayım bu ana kadar
+  zorMod: boolean // paylaşımda * işareti
   satirlar: Satir[]
   bitti: boolean
   kazandi: boolean
@@ -21,10 +23,10 @@ interface Props {
   onBildir: (metin: string) => void
 }
 
-export function SonucPenceresi({ tarih, slot, sonrakiAcilis, satirlar, bitti, kazandi, bitis, istatistik, onKapat, onBildir }: Props) {
+export function SonucPenceresi({ tarih, slot, sonrakiAcilis, zorMod, satirlar, bitti, kazandi, bitis, istatistik, onKapat, onBildir }: Props) {
   const ayar = useAyarlar()
+  const { durum: hesapDurumu } = useHesap()
   const [kalan, setKalan] = useState(sonrakiAcilis - Date.now())
-  const [genel, setGenel] = useState<{ deneme: number; oyuncu: number }[]>([])
   // Anlam ve örnek cümle pencere kaydırma gerektirmesin diye satır sınırıyla kısalır; taşarsa "Devamını oku" çıkar.
   const metinRef = useRef<HTMLDivElement>(null)
   const [tasiyor, setTasiyor] = useState(false)
@@ -40,22 +42,16 @@ export function SonucPenceresi({ tarih, slot, sonrakiAcilis, satirlar, bitti, ka
     const t = setInterval(() => setKalan(sonrakiAcilis - Date.now()), 1000)
     return () => clearInterval(t)
   }, [sonrakiAcilis])
-  useEffect(() => {
-    if (bitti && slot) void genelDagilim(tarih, slot).then(setGenel)
-  }, [bitti, tarih, slot])
 
   const paylasimMetni = () => {
     const [y, s, g] = ayar.renkKoru ? ['🟧', '🟦', '⬛'] : ['🟩', '🟨', '⬛']
     const izgara = satirlar.map((r) => r.sonuc.map((d) => (d === 'yesil' ? y : d === 'sari' ? s : g)).join('')).join('\n')
     const skor = kazandi ? satirlar.length : 'X'
     const ad = slot ? ` ${SLOT_ADI[slot]}` : ''
-    const zor = slot && zorModOyunu(tarih, slot) ? '*' : ''
+    const zor = zorMod ? '*' : ''
     return `${UYGULAMA_ADI} Kelime #${bulmacaNo(tarih)}${ad} ${skor}/6${zor}\n${izgara}\n${SITE_URL}#/kelime`
   }
 
-  const toplamOyuncu = genel.reduce((a, b) => a + b.oyuncu, 0)
-  const benimDeneme = kazandi ? satirlar.length : 0
-  const benimGrup = genel.find((g) => g.deneme === benimDeneme)?.oyuncu ?? 0
   const enCok = Math.max(1, ...(istatistik?.dagilim ?? [1]))
   const skorMetni = kazandi ? `${satirlar.length}/6` : 'X/6'
 
@@ -117,14 +113,7 @@ export function SonucPenceresi({ tarih, slot, sonrakiAcilis, satirlar, bitti, ka
               <dd>{istatistik.enIyiSeri}</dd>
             </div>
           </dl>
-          <div className="dagilim-ust">
-            <h3 className="dagilim-baslik">Deneme dağılımı</h3>
-            {bitti && toplamOyuncu >= 5 && (
-              <p className="sonuc-genel">
-                {kazandi ? 'Seninle aynı' : 'Bulamayan'}: <strong>%{Math.round((benimGrup / toplamOyuncu) * 100)}</strong>
-              </p>
-            )}
-          </div>
+          <h3 className="dagilim-baslik">Deneme dağılımı</h3>
           {/* Sütunlar: her denemede kaç kelime bulundu; bu kelimenin sütunu vurgulu */}
           <ol className="dagilim">
             {istatistik.dagilim.map((n, i) => (
@@ -143,6 +132,21 @@ export function SonucPenceresi({ tarih, slot, sonrakiAcilis, satirlar, bitti, ka
             ))}
           </ol>
         </>
+      )}
+
+      {hesapDurumu === 'girissiz' && (
+        <p className="sonuc-hesap">
+          Sonuçların bu cihazda saklanıyor.{' '}
+          <button
+            className="metin-dugme"
+            onClick={() => {
+              onKapat()
+              git('/ayarlar')
+            }}
+          >
+            Google ile giriş yap
+          </button>
+        </p>
       )}
 
       {bitti && (

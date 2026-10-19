@@ -154,7 +154,7 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 
 - **Ortak altyapı:** Supabase ücretsiz planındaki proje sayısı sınırlı olduğu için uygulamalar **tek projede, tablo önekleriyle** çalışır. Mindmash iki önek kullanır: `tt_` (takvim ve sorular) ve `kb_` (kelime oyunu). `gorev_kayitlari` tablosu ortaktır.
 - **Video kaynağı:** Soruların ve kelimenin hammaddesi `mdtokat/insta-face-youtube` (özel depo) içindeki günlük plan dosyalarıdır: `daily-plans/kaynak/YYYY-AA-GG.yaml`. Uygulama bu depoyu hiç okumaz. Claude zamanlanmış görevleri planı okur ve Supabase'e yazar.
-- **Anonim oturum:** Kelime oyunu, sunucuda oyun durumunu tutmak için anonim Supabase oturumu kullanır. Oturum yalnızca Kelime sekmesi açılınca kurulur; takvim ve sorular oturumsuz çalışır.
+- **Hesaplar Firebase'de:** Google ile giriş ve kullanıcı verisi (kelime oyunları, quiz cevapları) Firebase'dedir; Supabase kullanıcıyı tanımaz ve uygulama Supabase'de oturum açmaz. Oyun girişsiz de oynanır; sonuçlar önce cihaza yazılır, giriş yapılınca hesapla eşitlenir. Ayrıntılar `docs/FIREBASE.md`.
 - **Anahtarlar:**
   - İstemcide yalnızca `anon` (publishable) anahtar bulunur. Bu anahtarın herkese açık olması normaldir, güvenlik RLS ile sağlanır.
   - `service_role` anahtarı hiçbir yerde kullanılmaz. Claude, Supabase bağlayıcısı üzerinden çalışır.
@@ -400,7 +400,7 @@ export const hataBildir = (olay_id, not_metni) =>
 - Son açılan gün `localStorage`'da saklanır. İnternet yoksa önbellekten gösterilir ve "çevrimdışı" etiketi çıkar.
 - Uygulama açıldığında sonraki 7 günün `tt_gunun_bilgisi` kayıtları ön yüklenir (bildirimler için).
 
-**Yerel veriler (localStorage):** Soru başına quiz cevapları ve seri, kategori tercihleri, tema, bildirim saati, kelime oyunu ayarları. Takvim ve sorular için hesap yoktur; kelime oyunu anonim oturum kullanır.
+**Yerel veriler (localStorage):** Soru başına quiz cevapları ve seri, kelime oyunları, kategori tercihleri, tema, bildirim saati, kelime oyunu ayarları. Google ile giriş yapılırsa quiz cevapları ve kelime oyunları Firebase'deki hesapla eşitlenir (`docs/FIREBASE.md`).
 
 **Saatli sorular:** `gunuGetir` açılmış soruları `tt_quiz`'den, üç sorunun açılış saatlerini `tt_quiz_takvimi` RPC'sinden alır. RPC yoksa veya hata verirse açılmış sorulardan türetilir. `useAcilisYenile` (`src/lib/quizDepo.ts`) bir sonraki açılış saatinde ve uygulama öne geldiğinde veriyi yeniler.
 
@@ -436,7 +436,7 @@ export const hataBildir = (olay_id, not_metni) =>
 1. Paket adı `io.github.mdtokat.mindmash`. Android projesi `android/` içinde hazır; GitHub Actions "Android derlemesi" iş akışı test APK'sı ve imzalı AAB üretir.
 2. Play Console geliştirici hesabı (tek seferlik ücret).
 3. Yeni kişisel hesaplarda üretime çıkmadan önce belirli sayıda test kullanıcısıyla kapalı test şartı olabiliyor. Güncel şartı Play Console'da kontrol et.
-4. **Veri güvenliği formu:** Kişisel veri toplanmaz. Hata bildirimi notu anonimdir ve kullanıcıya bağlanmaz. Kelime oyunu anonim bir kimlikle oyun ilerlemesini (tahminler) saklar; formda "uygulama etkinliği" olarak, kullanıcıyla ilişkilendirilmeyen veri diye beyan et.
+4. **Veri güvenliği formu:** Giriş isteğe bağlıdır. Google ile giriş yapanlar için ad, e-posta ve kullanıcı kimliği (hesap yönetimi) ile oyun ve quiz sonuçları (uygulama işlevi) toplanır, Firebase'de saklanır, aktarımda şifrelenir. Kullanıcı hesabını uygulama içinden silebilir (Ayarlar > Hesap > Hesabımı sil). Hata bildirimi notu ve kelime önerisi kullanıcıya bağlanmaz.
 5. **İçerik derecelendirme anketi:** Genel kitle.
 6. **Mağaza açıklaması:** İçeriğin yapay zekâ ile hazırlanıp kaynaklarla doğrulandığını belirt.
 

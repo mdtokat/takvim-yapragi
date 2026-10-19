@@ -7,6 +7,7 @@ import { cevabi, cevapSayisi, quizKaydi, quizTamam, seri, soruDurumlari, useAcil
 import { SLOT_ADI, SLOT_SAATI, type Slot } from '../lib/sabitler'
 import { TURLER, type GunVerisi, type GununBilgisi, type Tur } from '../lib/tipler'
 import { sesCal } from '../lib/ses'
+import { useDepoSurumu } from '../lib/senkron'
 import { hareketAzalt } from '../lib/platform'
 import { Yaprak } from '../components/Yaprak'
 import { OlayListesi } from '../components/OlayListesi'
@@ -51,6 +52,7 @@ interface Durum {
 }
 
 export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
+  useDepoSurumu() // quiz sonucu hesap eşitlemesiyle değişince köşe yenilensin
   const tarih = tarihCoz(hamTarih) ? hamTarih : bugun()
   const ayar = useAyarlar()
   const [tur, setTur] = useState<Tur>('olay')

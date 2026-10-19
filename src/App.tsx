@@ -4,6 +4,7 @@ import { useRota } from './lib/yonlendirme'
 import { bugun } from './lib/tarih'
 import { yerelUygulama } from './lib/platform'
 import { bildirimleriPlanla } from './lib/bildirim'
+import { hesabiBaslat } from './lib/hesap'
 import { GunEkrani } from './views/GunEkrani'
 import { OlayEkrani } from './views/OlayEkrani'
 import { TakvimEkrani } from './views/TakvimEkrani'
@@ -17,6 +18,7 @@ export default function App() {
 
   useEffect(() => {
     void bildirimleriPlanla()
+    hesabiBaslat()
   }, [])
 
   // Android geri tuşu: önce açık pencere, sonra uygulama içi geçmiş, en son çıkış.
