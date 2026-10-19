@@ -1,15 +1,16 @@
 // Firebase yalnızca kullanıcı hesabı ve kullanıcı verisi içindir; içerik Supabase'dedir.
 // Web yapılandırma değerleri gizli değildir (Supabase publishable anahtarı gibi); erişimi Firestore
-// güvenlik kuralları sınırlar. Değerler verilmezse giriş özelliği gizlenir, oyun girişsiz çalışır.
+// güvenlik kuralları sınırlar.
 import type { FirebaseApp } from 'firebase/app'
 import type { Auth } from 'firebase/auth'
 import type { Firestore } from 'firebase/firestore'
 
+// Ortam değişkenleri verilmezse mindmash-takvim projesinin değerleri kullanılır.
 const yapilandirma = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string | undefined,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID as string | undefined,
+  apiKey: (import.meta.env.VITE_FIREBASE_API_KEY as string | undefined) || 'AIzaSyAZObfC2UVlRzvkzOQFONL0x58VdEKTEb8',
+  authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string | undefined) || 'mindmash-takvim.firebaseapp.com',
+  projectId: (import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined) || 'mindmash-takvim',
+  appId: (import.meta.env.VITE_FIREBASE_APP_ID as string | undefined) || '1:464242371875:web:9dc56635a9460d5874b096',
 }
 
 export const firebaseAyarli = !!(yapilandirma.apiKey && yapilandirma.authDomain && yapilandirma.projectId && yapilandirma.appId)

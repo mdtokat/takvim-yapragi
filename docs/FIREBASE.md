@@ -34,7 +34,7 @@ Güvenlik kuralları: `firebase/firestore.rules` (her kullanıcı yalnızca kend
 
 ## Yapılandırma
 
-Web yapılandırma değerleri gizli değildir (Supabase publishable anahtarı gibi). Uygulama şu ortam değişkenlerini okur; biri eksikse giriş özelliği gizlenir ve oyun girişsiz çalışır:
+Firebase projesi: `mindmash-takvim`. Web yapılandırma değerleri gizli değildir (Supabase publishable anahtarı gibi) ve `src/lib/firebase.ts` içinde varsayılan olarak durur. Başka bir projeye geçmek için şu ortam değişkenleri verilebilir:
 
 ```
 VITE_FIREBASE_API_KEY
@@ -43,7 +43,7 @@ VITE_FIREBASE_PROJECT_ID
 VITE_FIREBASE_APP_ID
 ```
 
-GitHub Actions bunları depo değişkenlerinden (Settings > Secrets and variables > Actions > Variables) alır.
+GitHub Actions bunları tanımlıysa depo değişkenlerinden (Settings > Secrets and variables > Actions > Variables) alır.
 
 ## Firebase projesini kurma (bir kez, Firebase Console'da)
 
@@ -53,7 +53,7 @@ GitHub Actions bunları depo değişkenlerinden (Settings > Secrets and variable
 4. **Yetkili alan adı:** Authentication → Settings → Yetkilendirilmiş alanlar → "Alan adı ekle": `mdtokat.github.io`. (`localhost` zaten ekli.)
 5. **Firestore:** Firestore Database → "Veritabanı oluştur" → konum: `europe-west1` (Belçika) veya `eur3` → "Üretim modunda başlat". Sonra Kurallar sekmesine `firebase/firestore.rules` dosyasının içeriğini yapıştır → Yayınla.
 6. **Web uygulaması:** Proje ayarları → Genel → Uygulamalarınız → Web (`</>`) → takma ad `Mindmash web` → Kaydet (Firebase Hosting'i işaretleme). Çıkan `firebaseConfig` içindeki `apiKey`, `authDomain`, `projectId`, `appId` değerlerini al.
-7. **Değerleri uygulamaya ver:** GitHub deposunda Settings → Secrets and variables → Actions → Variables → dört değişkeni `VITE_FIREBASE_…` adlarıyla ekle; ya da değerleri koda varsayılan olarak yazdır. Sonraki yayında giriş görünür.
+7. **Değerleri uygulamaya ver:** Değerler `src/lib/firebase.ts` içine varsayılan olarak yazılır (yapıldı: `mindmash-takvim`).
 
 ### Android (sonra)
 
