@@ -13,6 +13,8 @@ export interface KelimeKaydi {
   zorMod: boolean
   bitis: { cevap: string; anlam: string; ornek: string; videoBaslik: string | null } | null
   guncelleme: number // ms; eşitlemede hangi kaydın yeni olduğunu gösterir
+  sirali?: boolean // sıralamaya giren (90 saniyelik) oyun; tahminler sunucuda da tutulur
+  puan?: number // sıralama puanı (oyun bitince)
 }
 
 const ANAHTAR = 'kelime-oyunlari'

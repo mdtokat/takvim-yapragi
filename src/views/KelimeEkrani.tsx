@@ -9,6 +9,17 @@ import { hareketAzalt } from '../lib/platform'
 import { SLOT_ADI, SLOT_SAATI, type Slot } from '../lib/sabitler'
 import { sesCal } from '../lib/ses'
 import { AYLAR, gunEkle, saatMetni, saatteMetni, sureMetni, trBugun, trZamani } from '../lib/tarih'
+import {
+  KELIME_SURESI,
+  SiralamaHatasi,
+  kelimeDurumuGetir,
+  kelimeTahmini,
+  oyuncuBekleniyor,
+  oyuncuyuYenile,
+  useOyuncu,
+  type SiraliKelime,
+} from '../lib/siralama'
+import { SureSayaci } from '../components/SureSayaci'
 import { Izgara } from '../components/kelime/Izgara'
 import { Klavye } from '../components/kelime/Klavye'
 import { KelimeProgrami } from '../components/kelime/KelimeProgrami'
@@ -17,6 +28,14 @@ import { YardimPenceresi } from '../components/kelime/YardimPenceresi'
 import { SonucPenceresi } from '../components/kelime/SonucPenceresi'
 
 type Asama = 'yukleniyor' | 'oyun' | 'hazirlaniyor' | 'hata'
+/** Sıralamaya giren kelime: kapali (süresiz oynanır), bekliyor (Başla'ya basılmadı), suruyor, bitiyor (süre doldu, sonuç bekleniyor). */
+type SiraliDurum =
+  | { tur: 'yukleniyor' }
+  | { tur: 'kapali' }
+  | { tur: 'bekliyor' }
+  | { tur: 'suruyor'; bitis: number }
+  | { tur: 'bitiyor' }
+  | { tur: 'hata' }
 type PencereAdi = 'yardim' | 'sonuc' | null
 
 const TEBRIK = ['Dahice!', 'Olağanüstü!', 'Harika!', 'Çok iyi!', 'Güzel!', 'Son anda!']
@@ -51,6 +70,9 @@ export function KelimeEkrani() {
   const [pencere, setPencere] = useState<PencereAdi>(null)
   const [bildirimler, setBildirimler] = useState<Bildirim[]>([])
   const bildirimNo = useRef(0)
+  // Sıralama: girişli ve adı kayıtlı oyuncu bugünün kelimelerini 90 saniyede bulmaya çalışır.
+  const oyuncu = useOyuncu()
+  const [sirali, setSirali] = useState<Partial<Record<Slot, SiraliDurum>>>({})
 
   // Oyun durumu cihazdaki depodadır (girişliyse hesapla eşitlenir); depo değişince yeniden okunur.
   const kayitlar = useMemo(() => kelimeKayitlari(), [depoSurumu])
@@ -80,6 +102,15 @@ export function KelimeEkrani() {
   // Oyun başladıktan sonra zor mod o kelime için sabit kalır; ayar değişikliği sonraki kelimede geçerli olur.
   const zorMod = kayit && satirlar.length > 0 ? kayit.zorMod : ayar.zorMod
   const durumlar = useMemo(() => harfDurumlari(satirlar.slice(0, renkliSatir)), [satirlar, renkliSatir])
+  // Sıralamaya yalnızca bugünün, cihazda süresiz oynanmaya başlanmamış kelimesi girer.
+  const siraliAday = !!seciliSlot?.acik && tarih === trBugun() && (!kayit || !!kayit.sirali || kayit.tahminler.length === 0)
+  const siraliOlabilir = oyuncu.durum === 'kayitli' && siraliAday
+  const siraliDurum: SiraliDurum =
+    secili && siraliOlabilir
+      ? (sirali[secili] ?? { tur: 'yukleniyor' })
+      : siraliAday && oyuncuBekleniyor(oyuncu)
+        ? { tur: 'yukleniyor' }
+        : { tur: 'kapali' }
 
   const bildir = useCallback((metin: string, eylem?: Bildirim['eylem'], sure = 2200) => {
     const id = ++bildirimNo.current
@@ -143,6 +174,48 @@ export function KelimeEkrani() {
     void baslat()
   }, [baslat])
 
+  /** Sunucudaki sıralı oyunu cihazdaki kayda yazar (hesapla eşitlenir) ve süre durumunu günceller. */
+  const siraliKaydet = useCallback(
+    (slot: Slot, k: SiraliKelime) => {
+      const onceki = kelimeKayitlari()[kelimeAnahtari(tarih, slot)]
+      kelimeKaydet({
+        tarih,
+        slot,
+        tahminler: k.tahminler,
+        sonuclar: k.sonuclar,
+        durum: k.durum,
+        zorMod: onceki?.zorMod ?? ayarlariOku().zorMod,
+        bitis: k.bitis,
+        guncelleme: Date.now(),
+        sirali: true,
+        puan: k.puan,
+      })
+      setSirali((s) => ({ ...s, [slot]: k.durum === 'devam' ? { tur: 'suruyor', bitis: Date.now() + k.kalanMs } : { tur: 'kapali' } }))
+    },
+    [tarih],
+  )
+
+  // Gün veya oyuncu değişince sıralı oyun durumları yeniden alınır.
+  useEffect(() => setSirali({}), [tarih, oyuncu.durum])
+
+  // Seçili kelime sıralamaya girebiliyorsa sunucudaki durumu alınır (başka cihazda başlamış olabilir).
+  useEffect(() => {
+    if (!secili || !siraliOlabilir || sirali[secili]) return
+    const slot = secili
+    setSirali((s) => ({ ...s, [slot]: { tur: 'yukleniyor' } }))
+    kelimeDurumuGetir(tarih, slot, false)
+      .then((k) => {
+        if (k) {
+          siraliKaydet(slot, k)
+          if (k.durum !== 'devam') setRenkliSatir(k.tahminler.length)
+        } else setSirali((s) => ({ ...s, [slot]: { tur: 'bekliyor' } }))
+      })
+      .catch((e) => {
+        if (e instanceof SiralamaHatasi && e.kod === 'oyuncu_yok') oyuncuyuYenile()
+        setSirali((s) => ({ ...s, [slot]: e instanceof SiralamaHatasi && e.kod !== 'baglanti' ? { tur: 'kapali' } : { tur: 'hata' } }))
+      })
+  }, [secili, siraliOlabilir, sirali, tarih, siraliKaydet])
+
   // Hesap eşitlemesi seçili kelimenin tahtasını değiştirdiyse (başka cihazda oynanmış) renkler güncellenir.
   useEffect(() => {
     if (!animasyon) setRenkliSatir(satirlar.length)
@@ -175,7 +248,8 @@ export function KelimeEkrani() {
     return () => clearInterval(t)
   }, [])
 
-  const oynanabilir = asama === 'oyun' && !kilitli && !bitti && !gonderiliyor && !animasyon
+  const oynanabilir =
+    asama === 'oyun' && !kilitli && !bitti && !gonderiliyor && !animasyon && (siraliDurum.tur === 'kapali' || siraliDurum.tur === 'suruyor')
   const gonderilebilir = oynanabilir && [...mevcut].length === KELIME_UZUNLUGU
   // Sıradaki kelime: bugünün açılmamış videosu, yoksa yarın sabah 08:00.
   const siradaki = slotlar.find((s) => !s.acik) ?? null
@@ -212,18 +286,14 @@ export function KelimeEkrani() {
     }
     setGonderiliyor(true)
     try {
+      if (siraliDurum.tur === 'suruyor') {
+        await siraliGonder(slot, kelime)
+        return
+      }
       const tahminler = [...satirlar.map((s) => s.tahmin), kelime]
       const r = await degerlendir(tarih, slot, tahminler)
       if (!r.gecerli) {
-        salla()
-        bildir(
-          'Sözlükte yok',
-          {
-            ad: 'Kelimeyi öner',
-            f: async () => bildir((await kelimeOner(kelime)) ? 'Önerin alındı, incelenecek' : 'Öneri gönderilemedi. Bağlantını kontrol edip yeniden dene.'),
-          },
-          4500,
-        )
+        sozluktenYok(kelime)
         return
       }
       const sira = satirlar.length
@@ -237,29 +307,112 @@ export function KelimeEkrani() {
         bitis: r.bitis,
         guncelleme: Date.now(),
       })
-      setMevcut('')
-      setAcilanSatir(sira)
-      setAnimasyon(true)
-      setTimeout(
-        () => {
-          setRenkliSatir(tahminler.length)
-          setAnimasyon(false)
-          if (!r.bitti) return
-          if (r.dogru) {
-            setZipla(sira)
-            sesCal('tamam')
-            bildir(TEBRIK[sira])
-          } else if (r.bitis) {
-            sesCal('yanlis')
-            bildir(`Kelime: ${r.bitis.cevap}`, undefined, 4000)
-          }
-          setTimeout(() => setPencere('sonuc'), 1700)
-        },
-        hareketAzalt() ? 0 : ACILIS_MS,
-      )
+      satirAc(sira, r.bitti, r.dogru, r.bitis?.cevap ?? null)
     } catch (e) {
       if (e instanceof OyunHatasi && (e.kod === 'oyun_bitti' || e.kod === 'bulmaca_yok')) await baslat(slot)
+      else if (e instanceof SiralamaHatasi && e.kod !== 'baglanti') await baslat(slot)
       else bildir('Bağlantı kurulamadı. Yeniden dene.')
+    } finally {
+      setGonderiliyor(false)
+    }
+  }
+
+  const sozluktenYok = (kelime: string) => {
+    salla()
+    bildir(
+      'Sözlükte yok',
+      {
+        ad: 'Kelimeyi öner',
+        f: async () => bildir((await kelimeOner(kelime)) ? 'Önerin alındı, incelenecek' : 'Öneri gönderilemedi. Bağlantını kontrol edip yeniden dene.'),
+      },
+      4500,
+    )
+  }
+
+  /** Yeni satırı çevirir; oyun bittiyse kutlar veya cevabı söyler, sonra sonucu açar. */
+  const satirAc = (sira: number, bittiMi: boolean, dogru: boolean, cevap: string | null) => {
+    setMevcut('')
+    setAcilanSatir(sira)
+    setAnimasyon(true)
+    setTimeout(
+      () => {
+        setRenkliSatir(sira + 1)
+        setAnimasyon(false)
+        if (!bittiMi) return
+        if (dogru) {
+          setZipla(sira)
+          sesCal('tamam')
+          bildir(TEBRIK[sira])
+        } else if (cevap) {
+          sesCal('yanlis')
+          bildir(`Kelime: ${cevap}`, undefined, 4000)
+        }
+        setTimeout(() => setPencere('sonuc'), 1700)
+      },
+      hareketAzalt() ? 0 : ACILIS_MS,
+    )
+  }
+
+  /** Süre bittiğinde: oyun sunucuda sonuçlanır, cevap gösterilir. */
+  const sureBitti = (slot: Slot) => {
+    setSirali((s) => ({ ...s, [slot]: { tur: 'bitiyor' } }))
+    setMevcut('')
+    // Yoldaki son tahmin yetişsin diye sunucunun toleransı kadar beklenir.
+    const sor = (deneme: number) =>
+      kelimeDurumuGetir(tarih, slot, false)
+        .then((k) => {
+          if (k && k.durum === 'devam' && deneme < 3) {
+            setTimeout(() => void sor(deneme + 1), 1500)
+            return
+          }
+          if (!k) return
+          siraliKaydet(slot, k)
+          setRenkliSatir(k.tahminler.length)
+          if (k.durum === 'kaybetti') {
+            sesCal('yanlis')
+            bildir(k.bitis ? `Süre doldu. Kelime: ${k.bitis.cevap}` : 'Süre doldu', undefined, 4000)
+            setTimeout(() => setPencere('sonuc'), 1700)
+          }
+        })
+        .catch(() => {
+          bildir('Bağlantı kurulamadı. Yeniden dene.')
+          setSirali((s) => ({ ...s, [slot]: { tur: 'hata' } }))
+        })
+    setTimeout(() => void sor(0), 2500)
+  }
+
+  const siraliGonder = async (slot: Slot, kelime: string) => {
+    const onceki = satirlar.length
+    const r = await kelimeTahmini(tarih, slot, kelime)
+    if (!r.gecerli) {
+      sozluktenYok(kelime)
+      return
+    }
+    siraliKaydet(slot, r)
+    if (r.tahminler.length > onceki) {
+      satirAc(onceki, r.durum !== 'devam', r.durum === 'kazandi', r.bitis?.cevap ?? null)
+      if (r.durum === 'kazandi') setTimeout(() => bildir(`+${r.puan} puan`), hareketAzalt() ? 600 : ACILIS_MS + 600)
+    } else if (r.durum === 'kaybetti') {
+      // Tahmin süre dolduktan sonra ulaştı.
+      setRenkliSatir(r.tahminler.length)
+      bildir(r.bitis ? `Süre doldu. Kelime: ${r.bitis.cevap}` : 'Süre doldu', undefined, 4000)
+      setTimeout(() => setPencere('sonuc'), 1700)
+    }
+  }
+
+  const sureyiBaslat = async () => {
+    if (!secili) return
+    const slot = secili
+    setGonderiliyor(true)
+    try {
+      const k = await kelimeDurumuGetir(tarih, slot, true)
+      if (k) {
+        sesCal('tik')
+        siraliKaydet(slot, k)
+      }
+    } catch (e) {
+      if (e instanceof SiralamaHatasi && e.kod !== 'baglanti') setSirali((s) => ({ ...s, [slot]: { tur: 'kapali' } }))
+      else bildir('Süre başlatılamadı. Bağlantını kontrol edip yeniden dene.')
     } finally {
       setGonderiliyor(false)
     }
@@ -352,17 +505,55 @@ export function KelimeEkrani() {
               {Date.parse(seciliSlot.acilis) > simdi ? `${sureMetni(Date.parse(seciliSlot.acilis) - simdi)} kaldı` : 'Açılıyor…'}
             </p>
           </div>
+        ) : siraliDurum.tur === 'bekliyor' || siraliDurum.tur === 'hata' ? (
+          <div className="kelime-bekleme sure-baslat">
+            {siraliDurum.tur === 'hata' ? (
+              <>
+                <p>Sıralamaya bağlanılamadı. Bağlantını kontrol edip yeniden dene.</p>
+                <button
+                  className="dugme"
+                  onClick={() =>
+                    setSirali((s) => {
+                      const { [secili!]: _, ...kalan } = s
+                      return kalan
+                    })
+                  }
+                >
+                  Yeniden dene
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="sure-baslat-baslik">Bu kelime sıralamaya giriyor</p>
+                <p>90 saniyen var. Bulduğun denemeye göre 100, 80, 60, 40, 25 ya da 10 puan; kalan her 3 saniye 1 puan daha.</p>
+                <p className="aciklama kucuk">Süre Başla'ya basınca başlar; uygulamadan çıksan da durmaz.</p>
+                <button className="dugme" onClick={() => void sureyiBaslat()} disabled={gonderiliyor}>
+                  {gonderiliyor ? 'Başlıyor…' : 'Başla'}
+                </button>
+              </>
+            )}
+          </div>
         ) : (
           <Izgara satirlar={satirlar} mevcut={mevcut} acilanSatir={acilanSatir} sallanan={sallanan} zipla={zipla} yaziliyor={oynanabilir} />
         )}
       </div>
 
-      {asama === 'oyun' && !kilitli && secili && !bitti && (
+      {asama === 'oyun' && !kilitli && secili && !bitti && siraliDurum.tur !== 'bekliyor' && siraliDurum.tur !== 'hata' && (
         <>
-          <p className="kelime-durum">
-            Deneme {Math.min(satirlar.length + 1, DENEME_SAYISI)}/{DENEME_SAYISI}
-            {videodan && ` · ${SLOT_ADI[secili].toLocaleLowerCase('tr-TR')} videosunda geçiyor`}
-          </p>
+          {siraliDurum.tur === 'suruyor' ? (
+            <div className="kelime-durum kelime-sure">
+              <span>
+                Deneme {Math.min(satirlar.length + 1, DENEME_SAYISI)}/{DENEME_SAYISI}
+              </span>
+              <SureSayaci bitis={siraliDurum.bitis} toplam={KELIME_SURESI} onBitti={() => sureBitti(secili)} />
+            </div>
+          ) : (
+            <p className="kelime-durum">
+              {siraliDurum.tur === 'bitiyor'
+                ? 'Süre doldu'
+                : `Deneme ${Math.min(satirlar.length + 1, DENEME_SAYISI)}/${DENEME_SAYISI}${videodan ? ` · ${SLOT_ADI[secili].toLocaleLowerCase('tr-TR')} videosunda geçiyor` : ''}`}
+            </p>
+          )}
           <div className="kelime-eylem">
             <button className="dugme gonder-dugmesi" onClick={() => void gonder()} disabled={!gonderilebilir}>
               {gonderiliyor ? 'Gönderiliyor…' : 'Gönder'}
@@ -374,7 +565,10 @@ export function KelimeEkrani() {
 
       {asama === 'oyun' && !kilitli && secili && bitti && !animasyon && (
         <section className="kelime-ozet" aria-label="Sonuç">
-          <p className="ozet-baslik">{kazandi ? `${satirlar.length}. denemede buldun` : 'Bu sefer olmadı'}</p>
+          <p className="ozet-baslik">
+            {kazandi ? `${satirlar.length}. denemede buldun` : 'Bu sefer olmadı'}
+            {kayit?.sirali && typeof kayit.puan === 'number' && ` · ${kayit.puan} puan`}
+          </p>
           {bitis && (
             <p className="ozet-kelime">
               <strong>{bitis.cevap}</strong> · {bitis.anlam}
@@ -388,6 +582,11 @@ export function KelimeEkrani() {
               <button className="dugme dugme-ikincil" onClick={() => sec(digerAcik)}>
                 {SLOT_ADI[digerAcik.slot]} kelimesine geç
               </button>
+            )}
+            {kayit?.sirali && (
+              <a className="dugme dugme-ikincil" href="#/siralama/kelime">
+                Sıralama
+              </a>
             )}
           </div>
         </section>
@@ -404,6 +603,7 @@ export function KelimeEkrani() {
           bitti={bitti}
           kazandi={kazandi}
           bitis={bitis}
+          puan={kayit?.sirali ? (kayit.puan ?? null) : null}
           istatistik={istatistik}
           onKapat={() => setPencere(null)}
           onBildir={bildir}

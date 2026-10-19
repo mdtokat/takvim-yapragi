@@ -18,12 +18,13 @@ interface Props {
   bitti: boolean
   kazandi: boolean
   bitis: BitisBilgisi | null
+  puan: number | null // sıralamaya giren oyunun puanı
   istatistik: Istatistik | null
   onKapat: () => void
   onBildir: (metin: string) => void
 }
 
-export function SonucPenceresi({ tarih, slot, sonrakiAcilis, zorMod, satirlar, bitti, kazandi, bitis, istatistik, onKapat, onBildir }: Props) {
+export function SonucPenceresi({ tarih, slot, sonrakiAcilis, zorMod, satirlar, bitti, kazandi, bitis, puan, istatistik, onKapat, onBildir }: Props) {
   const ayar = useAyarlar()
   const { durum: hesapDurumu } = useHesap()
   const [kalan, setKalan] = useState(sonrakiAcilis - Date.now())
@@ -71,6 +72,20 @@ export function SonucPenceresi({ tarih, slot, sonrakiAcilis, zorMod, satirlar, b
               {skorMetni}
             </span>
           </div>
+          {puan !== null && (
+            <p className="sonuc-puan">
+              Sıralama puanı: <strong>{puan}</strong>{' '}
+              <button
+                className="metin-dugme"
+                onClick={() => {
+                  onKapat()
+                  git('/siralama/kelime')
+                }}
+              >
+                Sıralamayı gör
+              </button>
+            </p>
+          )}
           <div ref={metinRef} className={`sonuc-metin${acik ? ' acik' : ''}`}>
             <p className="sonuc-anlam">{bitis.anlam}</p>
             <p className="sonuc-ornek">“{bitis.ornek}”</p>

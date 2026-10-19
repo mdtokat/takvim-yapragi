@@ -4,11 +4,11 @@
 
 | | Firebase | Supabase |
 |---|---|---|
-| Ne tutar | Google ile giriş; kullanıcının kelime oyunları ve quiz cevapları | İçerik: günün bilgisi, olaylar, sorular, kelimeler, sözlük; kelime önerileri, hata bildirimleri |
-| Kullanıcıyı tanır mı | Evet | Hayır. Uygulama yalnızca publishable anahtarla istek atar, oturum açmaz |
-| Kim yazar | Uygulama (yalnızca kullanıcının kendi kayıtları) | Zamanlanmış görevler (içerik); uygulama yalnızca öneri ve hata bildirimi ekler |
+| Ne tutar | Google ile giriş; kullanıcının kelime oyunları ve quiz cevapları | İçerik: günün bilgisi, olaylar, sorular, kelimeler, sözlük; kelime önerileri, hata bildirimleri; sıralama (ad, sıralı oyunlar, puanlar) |
+| Kullanıcıyı tanır mı | Evet | Yalnızca sıralama fonksiyonları: Firebase oturum anahtarını doğrular (üçüncü taraf giriş). Uygulama Supabase'de oturum açmaz |
+| Kim yazar | Uygulama (yalnızca kullanıcının kendi kayıtları) | Zamanlanmış görevler (içerik); uygulama öneri ve hata bildirimi ekler, sıralama kayıtlarını yalnızca sunucu fonksiyonları yazar |
 
-İkisi birbirini tanımaz; bağlantıyı uygulama kurar. Firebase'de Cloud Functions yoktur, ücretsiz (Spark) plan yeter.
+Firebase'de Cloud Functions yoktur, ücretsiz (Spark) plan yeter. Supabase, sıralama için Firebase'in oturum anahtarlarını tanır (aşağıda "Supabase'de Firebase girişi"); başka bağlantı yoktur.
 
 ## Oyun durumu: önce cihaz, sonra hesap
 
@@ -31,6 +31,15 @@ kullanicilar/{uid}/quiz/{2026-10-19}
 ```
 
 Güvenlik kuralları: `firebase/firestore.rules` (her kullanıcı yalnızca kendi kayıtlarını okur ve yazar).
+
+## Supabase'de Firebase girişi (sıralama için, bir kez)
+
+Sıralama istekleri (`src/lib/siralama.ts`) Firebase oturum anahtarıyla gider. Supabase anahtarı ancak Firebase projesi tanımlıysa kabul eder:
+
+1. Supabase Dashboard → proje `qjiurxkgzzlqqemkzgli` → Authentication → Sign In / Providers → **Third-Party Auth** → "Add provider" → **Firebase** → Firebase Project ID: `mindmash-takvim` → kaydet.
+2. `role: 'authenticated'` özel talebi **gerekmez**: talep olmadığı için istekler `anon` rolüyle çalışır, sıralama fonksiyonları `anon`'a açıktır ve kullanıcıyı anahtarın `sub` alanından tanır (`tt_firebase_uid()`). Bu yüzden Cloud Functions ve Blaze planı gerekmez.
+
+Tanımlı değilse giriş yapan kullanıcı Ayarlar > Sıralama'da "Sıralamaya şu an bağlanılamadı" görür; oyunlar süresiz ve puansız oynanır, içerik etkilenmez.
 
 ## Yapılandırma
 

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { sesCal } from '../lib/ses'
 
-type Sekme = 'bugun' | 'kelime' | 'takvim' | 'ayarlar'
+type Sekme = 'bugun' | 'kelime' | 'siralama' | 'takvim' | 'ayarlar'
 
 const OGELER: { id: Sekme; ad: string; yol: string; ikon: ReactNode }[] = [
   {
@@ -24,6 +24,16 @@ const OGELER: { id: Sekme; ad: string; yol: string; ikon: ReactNode }[] = [
         <rect x="3" y="8" width="5" height="8" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.8" />
         <rect x="9.5" y="8" width="5" height="8" rx="1.2" fill="currentColor" stroke="currentColor" strokeWidth="1.8" />
         <rect x="16" y="8" width="5" height="8" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      </svg>
+    ),
+  },
+  {
+    id: 'siralama',
+    ad: 'Sıralama',
+    yol: '#/siralama',
+    ikon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 20V9h6v11M3 20v-6h6M15 20v-8h6v8M2 20h20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
       </svg>
     ),
   },

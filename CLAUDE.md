@@ -5,7 +5,9 @@ Tasarımın tamamı `docs/TASARIM.md` dosyasında; kelime oyunu `docs/KELIME_OYU
 ## Kurallar
 - Arayüz metinleri Türkçe, sade ve cümle düzeninde (yalnızca ilk harf büyük). Hata mesajı ne olduğunu ve ne yapılacağını söyler.
 - Kod içi adlar Türkçe (ör. `gunuGetir`, `OlayListesi`). Bu düzeni koru.
-- İstemci Supabase'e yazmaz ve Supabase'de oturum açmaz; istisnalar `tt_hata_bildirimleri` ekleme ve `kb_kelime_onerileri` ekleme. Yeni yazma ihtiyacı RLS politikasıyla birlikte tasarlanmalı.
+- İstemci Supabase'e yazmaz ve Supabase'de oturum açmaz; istisnalar `tt_hata_bildirimleri` ekleme, `kb_kelime_onerileri` ekleme ve sıralama fonksiyonları. Yeni yazma ihtiyacı RLS politikasıyla birlikte tasarlanmalı.
+- **Sıralama** (`docs/TASARIM.md` 5.7 ve 7.2): istekler Firebase oturum anahtarıyla ayrı bir Supabase istemcisinden gider (`src/lib/siralama.ts`); Supabase anahtarı doğrular (Firebase üçüncü taraf giriş), kullanıcıyı `tt_firebase_uid()` tanır. `tt_oyuncular`, `tt_quiz_puanlari`, `kb_puanlar` tablolarına politika ekleme; erişim yalnızca `security definer` fonksiyonlarla. Süre ve puan sunucuda ölçülür; istemcide puan hesaplama.
+- **Soru cevabı istemciye önceden gelmez.** Yeni istemci `tt_quiz.dogru_index` okumaz; cevap `tt_quiz_cevapla` ile değerlendirilir.
 - **Kullanıcı hesabı ve kullanıcı verisi Firebase'dedir** (`docs/FIREBASE.md`): Google ile giriş, kelime oyunları ve quiz cevapları. Supabase yalnızca içeriği tutar ve kullanıcıyı tanımaz. Oyun önce cihaza yazar (`kelimeDepo`, `quizDepo`); girişliyse `src/lib/hesap.ts` Firestore ile eşitler.
 - **Kelime cevabı istemciye gelmez.** `kb_bulmacalar` ve `kb_sozluk` tablolarını istemciye açacak politika, görünüm veya fonksiyon ekleme. Tahmin yalnızca durumsuz `kb_degerlendir` RPC'sinde değerlendirilir; cevap yalnızca oyun bitince döner.
 - **Videosu yayınlanmamış soru istemciye gelmez.** `tt_quiz` okuma politikası `acilis <= now()` koşulunu taşır; kilitli sorular için yalnızca `tt_quiz_takvimi` (sıra, slot, saat) döner.

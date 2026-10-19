@@ -5,19 +5,23 @@ import { bugun } from './lib/tarih'
 import { yerelUygulama } from './lib/platform'
 import { bildirimleriPlanla } from './lib/bildirim'
 import { hesabiBaslat } from './lib/hesap'
+import { siralamayiBaslat } from './lib/siralama'
 import { GunEkrani } from './views/GunEkrani'
 import { OlayEkrani } from './views/OlayEkrani'
 import { TakvimEkrani } from './views/TakvimEkrani'
 import { QuizEkrani } from './views/QuizEkrani'
 import { KelimeEkrani } from './views/KelimeEkrani'
 import { AyarlarEkrani } from './views/AyarlarEkrani'
+import { SiralamaEkrani } from './views/SiralamaEkrani'
 import { AltMenu } from './components/AltMenu'
+import { AdPenceresi } from './components/AdPenceresi'
 
 export default function App() {
   const rota = useRota()
 
   useEffect(() => {
     void bildirimleriPlanla()
+    siralamayiBaslat()
     hesabiBaslat()
   }, [])
 
@@ -49,6 +53,9 @@ export default function App() {
     case 'kelime':
       icerik = <KelimeEkrani />
       break
+    case 'siralama':
+      icerik = <SiralamaEkrani oyun={rota.oyun} />
+      break
     case 'ayarlar':
       icerik = <AyarlarEkrani />
       break
@@ -56,12 +63,13 @@ export default function App() {
       icerik = <GunEkrani tarih={rota.tarih ?? bugun()} />
   }
 
-  const sekme = rota.ad === 'takvim' || rota.ad === 'kelime' || rota.ad === 'ayarlar' ? rota.ad : 'bugun'
+  const sekme = rota.ad === 'takvim' || rota.ad === 'kelime' || rota.ad === 'siralama' || rota.ad === 'ayarlar' ? rota.ad : 'bugun'
 
   return (
     <div className="uygulama">
       <main className="icerik">{icerik}</main>
       <AltMenu aktif={sekme} />
+      <AdPenceresi />
     </div>
   )
 }

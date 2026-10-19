@@ -27,6 +27,7 @@ export function YardimPenceresi({ onKapat }: { onKapat: () => void }) {
       <p>Aynı harf kelimede kaç kez geçiyorsa en fazla o kadar karo renklenir. Sözlükte olmayan tahminler hak harcatmaz.</p>
       <p>Kelimeler Türkiye saatiyle sabah 08:00, öğlen 12:00 ve akşam 19:00 videolarıyla birlikte açılır. Her kelime o saatteki videoyla ilgilidir.</p>
       <p>Kelimeyi bulduğunda anlamını ve örnek bir cümleyi görürsün.</p>
+      <p>Sıralamaya katıldıysan bugünün kelimeleri süreli oynanır: her kelime için 90 saniyen var, puanın bulduğun denemeye ve kalan süreye göre hesaplanır.</p>
     </Pencere>
   )
 }
