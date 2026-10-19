@@ -13,7 +13,7 @@ import { QuizEkrani } from './views/QuizEkrani'
 import { KelimeEkrani } from './views/KelimeEkrani'
 import { AyarlarEkrani } from './views/AyarlarEkrani'
 import { SiralamaEkrani } from './views/SiralamaEkrani'
-import { AltMenu } from './components/AltMenu'
+import { AltMenu, type Sekme } from './components/AltMenu'
 import { AdPenceresi } from './components/AdPenceresi'
 
 export default function App() {
@@ -63,7 +63,13 @@ export default function App() {
       icerik = <GunEkrani tarih={rota.tarih ?? bugun()} />
   }
 
-  const sekme = rota.ad === 'takvim' || rota.ad === 'kelime' || rota.ad === 'siralama' || rota.ad === 'ayarlar' ? rota.ad : 'bugun'
+  // Takvim Bugün ekranındaki tarihten açılır; sorular yalnızca bugünün sorularıysa kendi sekmesinde sayılır.
+  const sekme: Sekme =
+    rota.ad === 'kelime' || rota.ad === 'siralama' || rota.ad === 'ayarlar'
+      ? rota.ad
+      : rota.ad === 'quiz' && rota.tarih === bugun()
+        ? 'sorular'
+        : 'bugun'
 
   return (
     <div className="uygulama">

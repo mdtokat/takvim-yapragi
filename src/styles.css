@@ -228,10 +228,27 @@ h2 {
 }
 .yaprak-tarih {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 14px;
   font-weight: inherit;
+}
+.yaprak-tarih-baglanti {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 90ms ease,
+    border-color 150ms ease;
+}
+.yaprak-tarih-baglanti:hover {
+  border-color: var(--cizgi);
+}
+.yaprak-tarih-baglanti:active {
+  transform: scale(0.97);
 }
 .yaprak-gun {
   font-family: var(--font-baslik);
