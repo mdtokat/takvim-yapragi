@@ -408,7 +408,7 @@ alter table kb_denemeler
 
 ## 10. Claude zamanlanmış görevi — Günlük bakım (her gün 09:51)
 
-Güncel ayarlar ve talimatın tamamı `docs/GOREVLER.md` Bölüm 2'de. Özet:
+Güncel ayarlar ve talimatın tamamı `docs/gorevler/kelime-bakim.md` dosyasında. Özet:
 
 - **Bulmaca tamponu:** 14 gün × 3 kelime. Her tarih için `sabah`, `oglen` ve `aksam` satırları yazılır; `acilis` videonun saatidir (08:00, 12:00, 19:00). Kelime yalnızca o slotun seslendirmesinden seçilir. Plan yoksa yedek kelime seçilir (`video_baslik` boş) ve plan sonradan gelirse açılıştan önce videodan kelimeyle değiştirilir. Açılmış kelime değiştirilmez.
 - **Sözlük inceleme:** Günde 3 kelime harcandığı için her çalışmada 150 (aday azsa 300) kelime incelenir.

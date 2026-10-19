@@ -301,7 +301,7 @@ create policy tt_hb_ekle on tt_hata_bildirimleri
 
 ### 8.1 Görev 1 — Günlük içerik (her gün 04:52)
 
-Güncel ayarlar ve talimatın tamamı `docs/GOREVLER.md` Bölüm 1'de. Özet:
+Güncel ayarlar ve talimatın tamamı `docs/gorevler/gunluk-icerik.md` dosyasında. Özet:
 
 - Günün bilgisi tamponu (10 gün).
 - Günün soruları (7 gün): her gün 3 video yayınlanır (sabah 08:00, öğlen 12:00, akşam 19:00). Her videonun bir sorusu vardır; soru o videonun seslendirmesinden yazılır ve videoyla aynı saatte açılır (`tt_quiz.acilis`). Plan yoksa yedek soru tarihte bugün olaylarından yazılır ama yine video saatinde açılır; plan sonradan gelirse açılıştan önce videodan soruyla değiştirilir.
