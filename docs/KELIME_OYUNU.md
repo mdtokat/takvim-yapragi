@@ -121,10 +121,13 @@ Gazetenin bulmaca köşesi görünümündedir (Mindmash'in almanak düzeni). Yuk
   - Tuşlar o güne kadarki en iyi durumuna göre renklenir (yeşil > sarı > gri).
 
 ### 6.2 Sonuç penceresi
-- "Tebrikler! 4/6" veya "Kelime: KALEM"
-- Anlam (1–2 cümle) ve örnek cümle
-- Paylaş butonu, kişisel istatistikler, günün genel dağılımı
-- Sonraki kelimeye geri sayım (bugünün açılmamış videosu, yoksa yarın 08:00)
+Pencere telefonda kaydırma gerektirmeden sığar. Yukarıdan aşağıya:
+- Başlık ("Buldun" / "Bu sefer olmadı"), kelimenin karoları ve skor ("2/6", bulunamadıysa "X/6")
+- Anlam ve örnek cümle, satır sınırıyla (ekran yüksekliğine göre 5/3, 3/2 veya 2/1 satır); taşarsa "Devamını oku"
+- Kelimenin geçtiği video tek satırda ve "Videoyu izle"
+- Kişisel istatistikler (oynanan, kazanma, seri, en iyi seri)
+- Deneme dağılımı: 6 kısa sütun, bu kelimenin sütunu vurgulu; yanında "Seninle aynı: %33" (en az 5 oyuncu varsa)
+- Sonraki kelimeye geri sayım (bugünün açılmamış videosu, yoksa yarın 08:00) ve "Sonucu paylaş"
 
 ### 6.3 Nasıl oynanır
 - Üç örnek satırla kurallar (ilk açılışta otomatik gösterilir)
