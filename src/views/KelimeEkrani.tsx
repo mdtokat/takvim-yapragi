@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { DENEME_SAYISI, KELIME_UZUNLUGU, harfDurumlari, harfNormalle, zorModHatasi } from '../lib/harfler'
+import { DENEME_SAYISI, KELIME_UZUNLUGU, harfDurumlari, harfNormalle, kazanildi, oyunBitti, zorModHatasi } from '../lib/harfler'
 import {
   OyunHatasi,
   bitisBilgisi,
@@ -17,11 +17,12 @@ import {
 import { istatistikHesapla, type Istatistik } from '../lib/istatistik'
 import { ayarlariGuncelle, ayarlariOku, useAyarlar, zorModOyunu, zorModOyunuKaydet } from '../lib/ayarlar'
 import { hareketAzalt } from '../lib/platform'
-import { SLOT_ADI, type Slot } from '../lib/sabitler'
+import { SLOT_ADI, SLOT_SAATI, type Slot } from '../lib/sabitler'
 import { sesCal } from '../lib/ses'
-import { gunEkle, saatMetni, saatteMetni, trBugun, trZamani } from '../lib/tarih'
+import { AYLAR, gunEkle, saatMetni, saatteMetni, sureMetni, trBugun, trZamani } from '../lib/tarih'
 import { Izgara } from '../components/kelime/Izgara'
 import { Klavye } from '../components/kelime/Klavye'
+import { KelimeProgrami } from '../components/kelime/KelimeProgrami'
 import { Bildirimler, type Bildirim } from '../components/kelime/Bildirimler'
 import { YardimPenceresi } from '../components/kelime/YardimPenceresi'
 import { SonucPenceresi } from '../components/kelime/SonucPenceresi'
@@ -32,13 +33,12 @@ type PencereAdi = 'yardim' | 'sonuc' | null
 const TEBRIK = ['Dahice!', 'Olağanüstü!', 'Harika!', 'Çok iyi!', 'Güzel!', 'Son anda!']
 const ACILIS_MS = 260 * (KELIME_UZUNLUGU - 1) + 520
 
-const kazanildi = (s: Satir[]) => s.some((r) => r.sonuc.every((d) => d === 'yesil'))
-const bittiMi = (s: Satir[]) => kazanildi(s) || s.length >= DENEME_SAYISI
 const BOS: Satir[] = []
 
-// Logo kendi kurallarını gösterir: K doğru yerde, İ kelimede var.
-const LOGO = ['K', 'E', 'L', 'İ', 'M', 'E']
-const LOGO_RENK: Record<number, string> = { 0: 'yesil', 3: 'sari' }
+const tarihBasligi = (t: string) => {
+  const [, a, g] = t.split('-').map(Number)
+  return t ? `${g} ${AYLAR[a - 1]}` : ''
+}
 
 export function KelimeEkrani() {
   const ayar = useAyarlar()
@@ -51,6 +51,7 @@ export function KelimeEkrani() {
   const [oyunlar, setOyunlar] = useState<Partial<Record<Slot, Satir[]>>>({})
   const [renkliSatir, setRenkliSatir] = useState(0)
   const [mevcut, setMevcut] = useState('')
+  const [simdi, setSimdi] = useState(() => Date.now())
   const [bitis, setBitis] = useState<BitisBilgisi | null>(null)
   const [gonderiliyor, setGonderiliyor] = useState(false)
   const [animasyon, setAnimasyon] = useState(false)
@@ -68,7 +69,7 @@ export function KelimeEkrani() {
   const seciliSlot = slotlar.find((s) => s.slot === secili) ?? null
   const kilitli = !!seciliSlot && !seciliSlot.acik
   const kazandi = kazanildi(satirlar)
-  const bitti = bittiMi(satirlar)
+  const bitti = oyunBitti(satirlar)
   // Oyun başladıktan sonra zor mod o kelime için sabit kalır; ayar değişikliği sonraki kelimede geçerli olur.
   const zorMod = satirlar.length > 0 && secili ? zorModOyunu(tarih, secili) : ayar.zorMod
   const durumlar = useMemo(() => harfDurumlari(satirlar.slice(0, renkliSatir)), [satirlar, renkliSatir])
@@ -102,7 +103,7 @@ export function KelimeEkrani() {
     setAcilanSatir(null)
     setZipla(null)
     setBitis(null)
-    if (bittiMi(s)) void bitisBilgisi(t, slot).then((b) => seciliRef.current === slot && setBitis(b))
+    if (oyunBitti(s)) void bitisBilgisi(t, slot).then((b) => seciliRef.current === slot && setBitis(b))
   }, [])
 
   const baslat = useCallback(async (istenen?: Slot) => {
@@ -125,7 +126,7 @@ export function KelimeEkrani() {
       const aciklar = b.slotlar.filter((s) => s.acik)
       const sec =
         b.slotlar.find((s) => s.slot === istenen) ??
-        [...aciklar].reverse().find((s) => !bittiMi(yeni[s.slot] ?? [])) ??
+        [...aciklar].reverse().find((s) => !oyunBitti(yeni[s.slot] ?? [])) ??
         aciklar.at(-1) ??
         b.slotlar[0]
       const s = yeni[sec.slot] ?? []
@@ -133,7 +134,7 @@ export function KelimeEkrani() {
       setAsama('oyun')
       void istatistikYukle(b.tarih)
       if (!sec.acik) return
-      if (bittiMi(s)) setPencere('sonuc')
+      if (oyunBitti(s)) setPencere('sonuc')
       else if (!ayarlariOku().yardimGoruldu) {
         setPencere('yardim')
         ayarlariGuncelle({ yardimGoruldu: true })
@@ -173,10 +174,20 @@ export function KelimeEkrani() {
     }
   }, [tarih, slotlar, secili, baslat])
 
+  // Geri sayımlar için saniyelik saat.
+  useEffect(() => {
+    const t = setInterval(() => setSimdi(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+
   const oynanabilir = asama === 'oyun' && !kilitli && !bitti && !gonderiliyor && !animasyon
-  // Bir sonraki kelimenin açılışı: bugünün açılmamış videosu, yoksa yarın sabah 08:00.
-  const sonrakiAcilis =
-    slotlar.map((s) => Date.parse(s.acilis)).find((z) => z > Date.now()) ?? (tarih ? trZamani(gunEkle(tarih, 1), '08:00') : 0)
+  const gonderilebilir = oynanabilir && [...mevcut].length === KELIME_UZUNLUGU
+  // Sıradaki kelime: bugünün açılmamış videosu, yoksa yarın sabah 08:00.
+  const siradaki = slotlar.find((s) => !s.acik) ?? null
+  const yarinIlk = tarih ? trZamani(gunEkle(tarih, 1), SLOT_SAATI.sabah) : 0
+  const sonrakiAcilis = siradaki ? Date.parse(siradaki.acilis) : yarinIlk
+  // Bitmiş bir kelimeden sonra geçilebilecek, açık ve bitmemiş başka bir kelime
+  const digerAcik = slotlar.find((s) => s.acik && s.slot !== secili && !oyunBitti(oyunlar[s.slot] ?? []))
 
   const harfEkle = (h: string) => {
     if (!oynanabilir) return
@@ -287,10 +298,15 @@ export function KelimeEkrani() {
     return () => window.removeEventListener('keydown', f)
   }, [])
 
-  const ipucu = asama === 'oyun' && !kilitli && !bitti && !!seciliSlot?.videoBaslik
+  const videodan = !!seciliSlot?.videoBaslik
+  const sec = (s: KelimeSlotu) => {
+    if (secili === s.slot) return
+    sesCal('tik')
+    slotSec(tarih, s.slot, oyunlar[s.slot] ?? [])
+  }
 
   return (
-    <div className={`kelime${ipucu ? ' ipuclu' : ''}`}>
+    <div className="kelime">
       <header className="kelime-ust">
         <button className="ikon-dugme" onClick={() => setPencere('yardim')} aria-label="Nasıl oynanır">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -299,13 +315,10 @@ export function KelimeEkrani() {
             <circle cx="12" cy="17" r="1.1" fill="currentColor" />
           </svg>
         </button>
-        <h1 className="kelime-logo" aria-label="Günün kelimesi">
-          {LOGO.map((h, i) => (
-            <span key={i} className={`logo-karo${LOGO_RENK[i] ? ` karo-${LOGO_RENK[i]}` : ''}`} aria-hidden="true">
-              {h}
-            </span>
-          ))}
-        </h1>
+        <div className="kelime-baslik">
+          <h1>Kelime</h1>
+          <p>{tarih ? `${tarihBasligi(tarih)} · her videoya bir kelime` : 'Her videoya bir kelime'}</p>
+        </div>
         <button className="ikon-dugme" onClick={() => setPencere('sonuc')} aria-label="İstatistikler" disabled={asama !== 'oyun' || kilitli}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 20V12M10 20V6M15 20v-9M20 20V9" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
@@ -314,32 +327,16 @@ export function KelimeEkrani() {
       </header>
 
       {slotlar.length > 0 && (
-        <div className="sekmeler kelime-slotlar" role="tablist" aria-label="Günün kelimeleri">
-          {slotlar.map((s) => {
-            const o = oyunlar[s.slot] ?? []
-            const durum = !s.acik ? saatMetni(s.acilis) : kazanildi(o) ? '✓' : bittiMi(o) ? '✗' : ''
-            return (
-              <button
-                key={s.slot}
-                role="tab"
-                aria-selected={secili === s.slot}
-                className="sekme"
-                disabled={gonderiliyor || animasyon}
-                onClick={() => {
-                  if (secili === s.slot) return
-                  sesCal('tik')
-                  slotSec(tarih, s.slot, o)
-                }}
-              >
-                {SLOT_ADI[s.slot]}
-                {durum && <span className="sekme-sayi">{durum}</span>}
-              </button>
-            )
-          })}
-        </div>
+        <KelimeProgrami slotlar={slotlar} oyunlar={oyunlar} secili={secili} simdi={simdi} pasif={gonderiliyor || animasyon} onSec={sec} />
       )}
 
-      {ipucu && secili && <p className="kelime-ipucu">İpucu: Bu kelime {SLOT_ADI[secili].toLocaleLowerCase('tr-TR')} videosunda geçiyor.</p>}
+      {asama === 'oyun' && !(kilitli && siradaki?.slot === secili) && (
+        <p className="kelime-sonraki">
+          {siradaki
+            ? `Sıradaki kelime ${SLOT_ADI[siradaki.slot].toLocaleLowerCase('tr-TR')} videosuyla ${saatteMetni(siradaki.acilis)} açılıyor.`
+            : `Bugünün üç kelimesi de açık. Yarının ilk kelimesi ${saatteMetni(new Date(yarinIlk).toISOString())} açılıyor.`}
+        </p>
+      )}
 
       <Bildirimler liste={bildirimler} />
 
@@ -360,18 +357,54 @@ export function KelimeEkrani() {
             </button>
           </div>
         ) : kilitli && seciliSlot ? (
-          <div className="bos-durum">
-            <p>
-              {SLOT_ADI[seciliSlot.slot]} kelimesi {saatteMetni(seciliSlot.acilis)}, {SLOT_ADI[seciliSlot.slot].toLocaleLowerCase('tr-TR')} videosuyla
-              birlikte açılır.
+          <div className="kelime-bekleme">
+            <p className="bekleme-ad">{SLOT_ADI[seciliSlot.slot]} kelimesi</p>
+            <p className="bekleme-saat">{saatMetni(seciliSlot.acilis)}</p>
+            <p>{SLOT_ADI[seciliSlot.slot]} videosuyla birlikte açılır.</p>
+            <p className="bekleme-kalan">
+              {Date.parse(seciliSlot.acilis) > simdi ? `${sureMetni(Date.parse(seciliSlot.acilis) - simdi)} kaldı` : 'Açılıyor…'}
             </p>
           </div>
         ) : (
-          <Izgara satirlar={satirlar} mevcut={mevcut} acilanSatir={acilanSatir} sallanan={sallanan} zipla={zipla} />
+          <Izgara satirlar={satirlar} mevcut={mevcut} acilanSatir={acilanSatir} sallanan={sallanan} zipla={zipla} yaziliyor={oynanabilir} />
         )}
       </div>
 
-      <Klavye durumlar={durumlar} pasif={!oynanabilir} onHarf={harfEkle} onSil={harfSil} onGir={() => void gonder()} />
+      {asama === 'oyun' && !kilitli && secili && !bitti && (
+        <>
+          <p className="kelime-durum">
+            Deneme {Math.min(satirlar.length + 1, DENEME_SAYISI)}/{DENEME_SAYISI}
+            {videodan && ` · ${SLOT_ADI[secili].toLocaleLowerCase('tr-TR')} videosunda geçiyor`}
+          </p>
+          <div className="kelime-eylem">
+            <button className="dugme gonder-dugmesi" onClick={() => void gonder()} disabled={!gonderilebilir}>
+              {gonderiliyor ? 'Gönderiliyor…' : 'Gönder'}
+            </button>
+          </div>
+          <Klavye durumlar={durumlar} pasif={!oynanabilir} onHarf={harfEkle} onSil={harfSil} />
+        </>
+      )}
+
+      {asama === 'oyun' && !kilitli && secili && bitti && !animasyon && (
+        <section className="kelime-ozet" aria-label="Sonuç">
+          <p className="ozet-baslik">{kazandi ? `${satirlar.length}. denemede buldun` : 'Bu sefer olmadı'}</p>
+          {bitis && (
+            <p className="ozet-kelime">
+              <strong>{bitis.cevap}</strong> · {bitis.anlam}
+            </p>
+          )}
+          <div className="ozet-dugmeler">
+            <button className="dugme" onClick={() => setPencere('sonuc')}>
+              Sonucu gör
+            </button>
+            {digerAcik && (
+              <button className="dugme dugme-ikincil" onClick={() => sec(digerAcik)}>
+                {SLOT_ADI[digerAcik.slot]} kelimesine geç
+              </button>
+            )}
+          </div>
+        </section>
+      )}
 
       {pencere === 'yardim' && <YardimPenceresi onKapat={() => setPencere(null)} />}
       {pencere === 'sonuc' && (

@@ -4,22 +4,15 @@ interface Props {
   durumlar: Record<string, Durum>
   pasif: boolean
   onHarf: (h: string) => void
-  onGir: () => void
   onSil: () => void
 }
 
-export function Klavye({ durumlar, pasif, onHarf, onGir, onSil }: Props) {
+export function Klavye({ durumlar, pasif, onHarf, onSil }: Props) {
   return (
     <div className="klavye" aria-label="Klavye">
       {KLAVYE_SATIRLARI.map((satir, i) => (
         <div key={i} className="klavye-satir">
           {satir.map((t) => {
-            if (t === 'GIR')
-              return (
-                <button key={t} className="tus tus-genis" onClick={onGir} disabled={pasif}>
-                  Gir
-                </button>
-              )
             if (t === 'SIL')
               return (
                 <button key={t} className="tus tus-genis" onClick={onSil} disabled={pasif} aria-label="Harf sil">

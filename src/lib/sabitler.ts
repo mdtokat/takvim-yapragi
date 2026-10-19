@@ -11,3 +11,5 @@ export const VIDEO_VARSAYILAN_URL = SOSYAL_HESAPLAR[0].url
 
 export type Slot = 'sabah' | 'oglen' | 'aksam'
 export const SLOT_ADI: Record<Slot, string> = { sabah: 'Sabah', oglen: 'Öğlen', aksam: 'Akşam' }
+/** Videoların yayın saati (Türkiye saati); soru ve kelime bu saatte açılır. */
+export const SLOT_SAATI: Record<Slot, string> = { sabah: '08:00', oglen: '12:00', aksam: '19:00' }
