@@ -29,7 +29,7 @@ Tasarımın tamamı `docs/TASARIM.md` dosyasında; kelime oyunu `docs/KELIME_OYU
 
 ## Firebase
 - Kurulum, Firestore düzeni ve güvenlik kuralları `docs/FIREBASE.md` ve `firebase/firestore.rules` içinde. Kural değişirse Firebase Console'a da yapıştırılmalı.
-- Web yapılandırması `VITE_FIREBASE_*` ortam değişkenlerinden gelir; eksikse giriş gizlenir. Android'de Google girişi yerel eklenti ister (henüz yok).
+- Proje: `mindmash-takvim`. Web yapılandırması `src/lib/firebase.ts` içinde varsayılan olarak durur (gizli değildir); `VITE_FIREBASE_*` ortam değişkenleriyle değiştirilebilir. Android'de Google girişi yerel eklenti ister (henüz yok).
 
 ## Video kaynağı
 - Sorular ve kelime `mdtokat/insta-face-youtube` deposundaki `daily-plans/kaynak/YYYY-AA-GG.yaml` planlarından gelir. Bu depoyu uygulama okumaz; zamanlanmış görevler okur. O depoda değişiklik yapma.
