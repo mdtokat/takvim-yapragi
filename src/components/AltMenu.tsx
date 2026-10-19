@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { sesCal } from '../lib/ses'
 
-type Sekme = 'bugun' | 'kelime' | 'siralama' | 'takvim' | 'ayarlar'
+export type Sekme = 'bugun' | 'kelime' | 'sorular' | 'siralama' | 'ayarlar'
 
 const OGELER: { id: Sekme; ad: string; yol: string; ikon: ReactNode }[] = [
   {
@@ -28,23 +28,30 @@ const OGELER: { id: Sekme; ad: string; yol: string; ikon: ReactNode }[] = [
     ),
   },
   {
+    id: 'sorular',
+    ad: 'Sorular',
+    yol: '#/quiz',
+    ikon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M6 3h12a2.5 2.5 0 0 1 2.5 2.5v9A2.5 2.5 0 0 1 18 17h-6.5l-4 3.8V17H6a2.5 2.5 0 0 1-2.5-2.5v-9A2.5 2.5 0 0 1 6 3z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+        <path d="M9.6 8.4a2.4 2.4 0 1 1 3.94 1.84c-.9.6-1.54 1.1-1.54 2v.3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <circle cx="12" cy="14.4" r="1.1" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
     id: 'siralama',
     ad: 'Sıralama',
     yol: '#/siralama',
     ikon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M9 20V9h6v11M3 20v-6h6M15 20v-8h6v8M2 20h20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    id: 'takvim',
-    ad: 'Takvim',
-    yol: '#/takvim',
-    ikon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="3.5" y="5" width="17" height="15.5" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
-        <path d="M3.5 9.5h17M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
       </svg>
     ),
   },

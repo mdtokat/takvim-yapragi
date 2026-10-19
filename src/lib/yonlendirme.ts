@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { bugun } from './tarih'
 
 export type Rota =
   | { ad: 'gun'; tarih: string | null }
@@ -19,7 +20,7 @@ export function rotaCoz(hash: string): Rota {
     case 'takvim':
       return { ad: 'takvim', ay: parca[1] ?? null }
     case 'quiz':
-      return parca[1] ? { ad: 'quiz', tarih: parca[1] } : { ad: 'gun', tarih: null }
+      return { ad: 'quiz', tarih: parca[1] || bugun() }
     case 'kelime':
       return { ad: 'kelime' }
     case 'siralama':

@@ -83,10 +83,10 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 ### 5.1 Bugün (ana ekran)
 - Görünüm bir almanak (gazete) sayfasıdır: krem kâğıt zemin, mürekkep siyahı yazı, tek vurgu rengi kırmızı. Başlıklar Playfair Display, metin Source Serif 4; bölümler gölgeli kartlarla değil çizgilerle ayrılır.
 - Üstte manşet: "Mindmash" ve altında italik alt başlık, çift çizgiyle kapanır.
-- Tarih satırı: büyük kırmızı gün sayısı, yanında "Ekim 2026" ve haftanın günü (pazar kırmızı), altında "Yılın 290. günü" satırı.
+- Tarih satırı: büyük kırmızı gün sayısı, yanında "Ekim 2026" ve haftanın günü (pazar kırmızı), altında "Yılın 290. günü" satırı. Tarihe dokununca o ayın takvimi açılır (Takvim alt menüde değildir).
 - Gün değiştirme: oklar, yana kaydırma veya klavyede sol/sağ ok. İleri giderken sayfa sol kenarından kitap sayfası gibi çevrilir; geri giderken önceki sayfa geri kapanır. Kaydırırken sayfa parmağı izleyerek dönmeye başlar.
 - **Günün bilgisi:** Sayfanın baş yazısı. Kırmızı küçük etiket ("Günün bilgisi · Kategori"), başlık, büyük kırmızı ilk harfle 2–3 cümle ve "Kaynağı aç" linki
-- Altında iki sütunlu köşeler: "Günün soruları" ve (yalnızca bugünün sayfasında) "Günün kelimesi". Soru köşesi durumu söyler: "Üç soru seni bekliyor", "Öğlen sorusu açıldı", "Sıradaki soru 12:00'de açılır" ya da "2/3 doğru"; seri varsa altında "4 günlük seri" yazar. Kelime köşesi Kelime sekmesine gider.
+- Altında iki sütunlu köşeler: "Günün soruları" ve (yalnızca bugünün sayfasında) "Günün kelimesi". Başlıkların solunda alt menüyle aynı çizgide ikonlar durur (`src/components/KoseIkonu.tsx`): soru balonu ve bulmaca parçası; vurgu kırmızıdır. Soru köşesi durumu söyler: "Üç soru seni bekliyor", "Öğlen sorusu açıldı", "Sıradaki soru 12:00'de açılır" ya da "2/3 doğru"; seri varsa altında "4 günlük seri" yazar. Kelime köşesi Kelime sekmesine gider.
 - "Tarihte bugün" başlığı, sekmeler: Olaylar · Doğumlar · Ölümler
 - Kategori çipleri (çoklu seçim, tercih yerel olarak hatırlanır)
 - Kronolojik olay listesi. Her satırda yıl, başlık ve altında italik "Kategori · X yıl önce" yer alır.
@@ -97,10 +97,12 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 - "Hata bildir" butonu: Kısa bir not alanı açar, gönderince "Teşekkürler" der.
 
 ### 5.3 Takvim
+- Bugün ekranındaki tarihe dokununca açılır (`#/takvim/YYYY-AA`, gösterilen günün ayı). Alt menüde "Bugün" seçili kalır.
 - Ay görünümü. Herhangi bir güne dokununca o günün ekranı açılır.
 - **29 Şubat:** Artık yıl olmayan yıllarda 28 Şubat ekranının altında "29 Şubat'ta neler oldu?" linki çıkar.
 
 ### 5.4 Quiz (günün soruları)
+- Alt menüde "Kelime"nin yanında "Sorular" sekmesi (`#/quiz`, tarihsiz adres bugünün sorularını açar). Geçmiş bir günün soruları Bugün ekranındaki köşeden açılır (`#/quiz/YYYY-AA-GG`).
 - 3 soru, her biri 4 seçenekli. Sıra 1 sabah, 2 öğlen, 3 akşam videosundan gelir.
 - Her soru kendi videosunun yayın saatinde açılır (`tt_quiz.acilis`, varsayılan 08:00 · 12:00 · 19:00, Türkiye saati). Açılmamış soru istemciye hiç gelmez (RLS); ekran yalnızca saatini gösterir: "Sıradaki soru öğlen videosuyla birlikte açılacak."
 - Açık sorular sırayla sorulur. Her cevap hemen kaydedilir; kullanıcı uygulamadan çıkıp sonraki videoda dönebilir.

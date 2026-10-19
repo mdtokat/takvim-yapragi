@@ -92,13 +92,15 @@ export function Yaprak({ tarih, bilgi, onDegis, onGit, kopya, inis, cekme = 0, o
           </svg>
         </button>
         <h1 className="yaprak-tarih">
-          <span className="yaprak-gun">{d.getDate()}</span>
-          <span className="yaprak-tarih-yan">
-            <span className="yaprak-ay">
-              {AYLAR[d.getMonth()]} {d.getFullYear()}
+          <a className="yaprak-tarih-baglanti" href={`#/takvim/${tarih.slice(0, 7)}`} aria-label={`${d.getDate()} ${AYLAR[d.getMonth()]} ${d.getFullYear()} ${GUNLER[d.getDay()]}. Takvimi aç`}>
+            <span className="yaprak-gun">{d.getDate()}</span>
+            <span className="yaprak-tarih-yan">
+              <span className="yaprak-ay">
+                {AYLAR[d.getMonth()]} {d.getFullYear()}
+              </span>
+              <span className={`yaprak-hafta${pazar ? ' kirmizi' : ''}`}>{GUNLER[d.getDay()]}</span>
             </span>
-            <span className={`yaprak-hafta${pazar ? ' kirmizi' : ''}`}>{GUNLER[d.getDay()]}</span>
-          </span>
+          </a>
         </h1>
         <button className="yaprak-ok" onClick={() => onDegis?.(1, 0)} aria-label="Sonraki gün">
           <svg viewBox="0 0 24 24" aria-hidden="true">
