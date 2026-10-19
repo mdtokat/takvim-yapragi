@@ -12,19 +12,20 @@
 </head>
 <body>
 <h1>Gizlilik Politikası</h1>
-<p>Son güncelleme: 17 Ekim 2026</p>
+<p>Son güncelleme: 19 Ekim 2026</p>
 <p>Mindmash ("uygulama"), tarihte o gün yaşanan olayları, günün bilgisini, günlük bir Türkçe kelime oyununu ve Mindmash videolarından hazırlanan üç soruyu gösteren bir uygulamadır. Bu sayfa hangi verilerin işlendiğini açıklar.</p>
 <h2>Topladığımız veriler</h2>
-<p>Uygulama adınızı, e-posta adresinizi, telefon numaranızı, konumunuzu veya rehberinizi istemez ve toplamaz.</p>
+<p>Uygulama giriş yapmadan kullanılabilir. Giriş yapmazsanız adınız, e-posta adresiniz veya başka bir kişisel bilginiz toplanmaz. Uygulama telefon numaranızı, konumunuzu veya rehberinizi hiçbir zaman istemez.</p>
 <ul>
-  <li><strong>Anonim oyuncu kimliği:</strong> Kelime oyununu ilk açtığınızda, kişisel bilgi içermeyen rastgele bir kimlik oluşturulur. Bu kimlik, oyun ilerlemenizi ve istatistiklerinizi farklı oturumlarda korumak için kullanılır. Kelime oyununu açmazsanız kimlik oluşturulmaz.</li>
-  <li><strong>Tahminleriniz:</strong> Kelime oyunundaki günlük tahminleriniz ve sonuçları bu anonim kimlikle saklanır. Kimin oynadığını açığa çıkarmadan, günün genel sonuç dağılımını ("oyuncuların %38'i 4. denemede buldu") hesaplamak için toplu olarak kullanılır.</li>
+  <li><strong>Google ile giriş (isteğe bağlı):</strong> Google hesabınızla giriş yaparsanız, girişi Google Firebase Authentication yönetir. Firebase hesabınız için adınızı, e-posta adresinizi ve rastgele bir kullanıcı kimliğini saklar. Bu bilgiler yalnızca hesabınızı tanımak ve sonuçlarınızı hesabınıza bağlamak için kullanılır.</li>
+  <li><strong>Oyun sonuçlarınız:</strong> Kelime oyunundaki tahminleriniz ve sonuçları ile günün sorularına verdiğiniz cevaplar cihazınızda saklanır. Giriş yaptıysanız, başka cihazlarda da görebilmeniz için hesabınıza bağlı olarak Google Firebase Cloud Firestore'a da kaydedilir. Bu kayıtları yalnızca siz okuyabilirsiniz.</li>
+  <li><strong>Tahminlerin değerlendirilmesi:</strong> Kelime oyununda yaptığınız tahminler, renklerin hesaplanması için kimliğiniz olmadan sunucuya gönderilir ve orada saklanmaz.</li>
   <li><strong>Kelime önerileri:</strong> "Kelimeyi öner" ile gönderdiğiniz kelime, sözlüğü geliştirmek için incelenir.</li>
   <li><strong>Hata bildirimleri:</strong> Bir kayıtta "Hata bildir" ile gönderdiğiniz kısa not, ilgili kaydın numarasıyla birlikte saklanır. Bu not sizinle veya cihazınızla ilişkilendirilmez ve yalnızca içeriği düzeltmek için kullanılır.</li>
-  <li><strong>Cihazda saklananlar:</strong> Tema, bildirim saati, kategori tercihleri, kelime oyunu ayarları ve günün sorularına verdiğiniz cevaplar yalnızca cihazınızda tutulur; sunucuya gönderilmez.</li>
+  <li><strong>Cihazda saklananlar:</strong> Tema, bildirim saati, kategori tercihleri ve kelime oyunu ayarları yalnızca cihazınızda tutulur; sunucuya gönderilmez.</li>
 </ul>
 <h2>Hizmet sağlayıcılar</h2>
-<p>Veriler Supabase (veritabanı ve kimlik doğrulama) üzerinde saklanır. Web sürümü GitHub Pages üzerinde barındırılır. Bu hizmetler, isteklerin teknik olarak iletilmesi için IP adresi gibi standart bağlantı bilgilerini işleyebilir.</p>
+<p>Uygulamanın içeriği (olaylar, sorular, kelimeler), kelime önerileri ve hata bildirimleri Supabase üzerinde saklanır. Giriş ve hesaba bağlı oyun sonuçları Google Firebase (Authentication ve Cloud Firestore) üzerinde saklanır. Web sürümü GitHub Pages üzerinde barındırılır. Bu hizmetler, isteklerin teknik olarak iletilmesi için IP adresi gibi standart bağlantı bilgilerini işleyebilir.</p>
 <h2>Sosyal medya bağlantıları</h2>
 <p>"Videoyu izle" gibi bağlantılar Instagram, Facebook veya YouTube'u açar. Bu sitelerde işlenen veriler o hizmetlerin kendi gizlilik politikalarına tabidir. Uygulama bu hizmetlere sizin hakkınızda bilgi göndermez.</p>
 <h2>Bildirimler</h2>
@@ -32,11 +33,11 @@
 <h2>Reklam ve paylaşım</h2>
 <p>Uygulamada reklam yoktur. Veriler üçüncü taraflara satılmaz veya reklam amacıyla paylaşılmaz.</p>
 <h2>Verilerin silinmesi</h2>
-<p>Uygulamanın verilerini temizlediğinizde veya uygulamayı kaldırdığınızda anonim kimliğinizle bağlantınız kopar. Sunucudaki kayıtlarınızın silinmesini isterseniz GitHub üzerinden talepte bulunabilirsiniz.</p>
+<p>Giriş yaptıysanız, Ayarlar &gt; Hesap &gt; "Hesabımı sil" ile hesabınızı ve hesabınıza kayıtlı bütün sonuçları kalıcı olarak silebilirsiniz. Çıkış yaptığınızda cihazdaki sonuçlar silinir, hesabınızdaki kayıtlar kalır. Giriş yapmadıysanız, uygulamanın verilerini temizlediğinizde veya uygulamayı kaldırdığınızda cihazdaki sonuçlar silinir.</p>
 <h2>Yapay zekâ ile hazırlanan içerik</h2>
 <p>İçerik, günlük kelimeler ve sorular yapay zekâ yardımıyla hazırlanır ve kaynaklarla doğrulanır. Hata görürseniz uygulama içinden bildirebilirsiniz.</p>
 <h2>Çocuklar</h2>
-<p>Uygulama kişisel veri toplamadığından çocuklara ait kişisel veri de toplamaz.</p>
+<p>Uygulama giriş yapmadan kişisel veri toplamaz. Google ile giriş, Google hesabı açabilecek yaştaki kullanıcılar içindir.</p>
 <h2>İletişim</h2>
 <p>Sorularınız için GitHub üzerinden iletişime geçebilirsiniz: <a href="https://github.com/mdtokat/takvim-yapragi">github.com/mdtokat/takvim-yapragi</a></p>
 </body>

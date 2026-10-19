@@ -1,15 +1,15 @@
 import { gunEkle } from './tarih'
 import { DENEME_SAYISI } from './harfler'
 
-export interface DenemeKaydi {
+/** Bitmiş bir kelime oyununun özeti; günde üç kelimenin her biri ayrı oyundur. */
+export interface OyunOzeti {
   tarih: string
-  slot: string
-  sira: number
-  dogru: boolean
+  deneme: number
+  kazandi: boolean
 }
 
 export interface Istatistik {
-  oynanan: number // biten oyun (günde üç kelimenin her biri ayrı oyundur)
+  oynanan: number
   kazanilan: number
   oran: number
   seri: number
@@ -17,28 +17,15 @@ export interface Istatistik {
   dagilim: number[] // 1..6 denemede kazanılan oyun sayısı (indeks 0 = 1. deneme)
 }
 
-export function istatistikHesapla(kayitlar: DenemeKaydi[], bugun: string): Istatistik {
-  const oyunlar = new Map<string, { tarih: string; enBuyuk: number; kazanma: number | null }>()
-  for (const k of kayitlar) {
-    const anahtar = `${k.tarih}/${k.slot}`
-    const o = oyunlar.get(anahtar) ?? { tarih: k.tarih, enBuyuk: 0, kazanma: null }
-    o.enBuyuk = Math.max(o.enBuyuk, k.sira)
-    if (k.dogru) o.kazanma = k.sira
-    oyunlar.set(anahtar, o)
-  }
+export function istatistikHesapla(oyunlar: OyunOzeti[], bugun: string): Istatistik {
   const dagilim = Array<number>(DENEME_SAYISI).fill(0)
   const kazanilanGunler = new Set<string>()
-  let oynanan = 0
   let kazanilan = 0
-  for (const o of oyunlar.values()) {
-    const bitti = o.kazanma !== null || o.enBuyuk >= DENEME_SAYISI
-    if (!bitti) continue
-    oynanan++
-    if (o.kazanma !== null) {
-      kazanilan++
-      kazanilanGunler.add(o.tarih)
-      dagilim[o.kazanma - 1]++
-    }
+  for (const o of oyunlar) {
+    if (!o.kazandi) continue
+    kazanilan++
+    kazanilanGunler.add(o.tarih)
+    dagilim[o.deneme - 1]++
   }
   // Güncel seri: en az bir kelimenin bulunduğu art arda günler; bugün bulunmadıysa dünden geriye sayılır.
   let gun = kazanilanGunler.has(bugun) ? bugun : gunEkle(bugun, -1)
@@ -55,9 +42,9 @@ export function istatistikHesapla(kayitlar: DenemeKaydi[], bugun: string): Istat
     enIyiSeri = Math.max(enIyiSeri, uzunluk)
   })
   return {
-    oynanan,
+    oynanan: oyunlar.length,
     kazanilan,
-    oran: oynanan ? Math.round((kazanilan / oynanan) * 100) : 0,
+    oran: oyunlar.length ? Math.round((kazanilan / oyunlar.length) * 100) : 0,
     seri,
     enIyiSeri,
     dagilim,

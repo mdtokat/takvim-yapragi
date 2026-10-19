@@ -5,8 +5,9 @@ Tasarımın tamamı `docs/TASARIM.md` dosyasında; kelime oyunu `docs/KELIME_OYU
 ## Kurallar
 - Arayüz metinleri Türkçe, sade ve cümle düzeninde (yalnızca ilk harf büyük). Hata mesajı ne olduğunu ve ne yapılacağını söyler.
 - Kod içi adlar Türkçe (ör. `gunuGetir`, `OlayListesi`). Bu düzeni koru.
-- İstemci veritabanına yazmaz; istisnalar `tt_hata_bildirimleri` ekleme, `kb_kelime_onerileri` ekleme ve `kb_tahmin` RPC'si. Yeni yazma ihtiyacı RLS politikasıyla birlikte tasarlanmalı.
-- **Kelime cevabı istemciye gelmez.** `kb_bulmacalar` ve `kb_sozluk` tablolarını istemciye açacak politika, görünüm veya fonksiyon ekleme. Tahmin yalnızca `kb_tahmin` RPC'sinde değerlendirilir.
+- İstemci Supabase'e yazmaz ve Supabase'de oturum açmaz; istisnalar `tt_hata_bildirimleri` ekleme ve `kb_kelime_onerileri` ekleme. Yeni yazma ihtiyacı RLS politikasıyla birlikte tasarlanmalı.
+- **Kullanıcı hesabı ve kullanıcı verisi Firebase'dedir** (`docs/FIREBASE.md`): Google ile giriş, kelime oyunları ve quiz cevapları. Supabase yalnızca içeriği tutar ve kullanıcıyı tanımaz. Oyun önce cihaza yazar (`kelimeDepo`, `quizDepo`); girişliyse `src/lib/hesap.ts` Firestore ile eşitler.
+- **Kelime cevabı istemciye gelmez.** `kb_bulmacalar` ve `kb_sozluk` tablolarını istemciye açacak politika, görünüm veya fonksiyon ekleme. Tahmin yalnızca durumsuz `kb_degerlendir` RPC'sinde değerlendirilir; cevap yalnızca oyun bitince döner.
 - **Videosu yayınlanmamış soru istemciye gelmez.** `tt_quiz` okuma politikası `acilis <= now()` koşulunu taşır; kilitli sorular için yalnızca `tt_quiz_takvimi` (sıra, slot, saat) döner.
 - Kelime harfleri `harfNormalle` (`src/lib/harfler.ts`) ile büyük Türkçe harfe çevrilir. Veritabanında `upper()` kullanma; İ/ı'yı yanlış çevirir.
 - Supabase `service_role` anahtarı hiçbir dosyaya girmez. Publishable anahtarın istemcide olması normaldir.
@@ -24,7 +25,11 @@ Tasarımın tamamı `docs/TASARIM.md` dosyasında; kelime oyunu `docs/KELIME_OYU
 ## Supabase
 - Proje: `qjiurxkgzzlqqemkzgli` (otomatik-uygulamalar). Bu uygulamanın tabloları `tt_` ve `kb_` öneklerini taşır; `gorev_kayitlari` diğer uygulamalarla paylaşılır.
 - Şema değişikliği gerekirse `supabase/migrations/` altına göç olarak ekle ve `docs/TASARIM.md` Bölüm 7'yi (kelime için `docs/KELIME_OYUNU.md` Bölüm 9'u) güncelle.
-- Anonim girişler açık olmalı (kelime oyunu).
+- Anonim girişler yalnızca eski sürümler (`kb_tahmin` kullanan Android sürümü) için açık; yeni istemci Supabase'de oturum açmaz.
+
+## Firebase
+- Kurulum, Firestore düzeni ve güvenlik kuralları `docs/FIREBASE.md` ve `firebase/firestore.rules` içinde. Kural değişirse Firebase Console'a da yapıştırılmalı.
+- Web yapılandırması `VITE_FIREBASE_*` ortam değişkenlerinden gelir; eksikse giriş gizlenir. Android'de Google girişi yerel eklenti ister (henüz yok).
 
 ## Video kaynağı
 - Sorular ve kelime `mdtokat/insta-face-youtube` deposundaki `daily-plans/kaynak/YYYY-AA-GG.yaml` planlarından gelir. Bu depoyu uygulama okumaz; zamanlanmış görevler okur. O depoda değişiklik yapma.

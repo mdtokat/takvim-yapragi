@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { oku, yaz } from './depo'
 import type { Kategori } from './tipler'
-import type { Slot } from './sabitler'
 
 export type Tema = 'sistem' | 'acik' | 'koyu'
 
@@ -59,16 +58,4 @@ export function gorunumuUygula() {
   else kok.setAttribute('data-theme', mevcut.tema === 'koyu' ? 'dark' : 'light')
   if (mevcut.renkKoru) kok.setAttribute('data-renk', 'koru')
   else kok.removeAttribute('data-renk')
-}
-
-// Zor modla oynanan kelimeler (paylaşımda * işareti ve oyun ortasında modun sabit kalması için).
-// Anahtar "YYYY-AA-GG/slot"; günde tek kelime olan dönemden kalan yalın tarihler sabah kelimesi sayılır.
-export function zorModOyunu(tarih: string, slot: Slot): boolean {
-  const g = oku<string[]>('zor-mod-gunleri', [])
-  return g.includes(`${tarih}/${slot}`) || (slot === 'sabah' && g.includes(tarih))
-}
-export function zorModOyunuKaydet(tarih: string, slot: Slot) {
-  const g = oku<string[]>('zor-mod-gunleri', [])
-  const anahtar = `${tarih}/${slot}`
-  if (!g.includes(anahtar)) yaz('zor-mod-gunleri', [...g.slice(-1200), anahtar])
 }

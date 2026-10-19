@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// Mindmash: Firestore yalnızca kullanıcıya ait oyun ve quiz sonuçlarını tutar.
+// Düzen: kullanicilar/{uid}/kelime/{2026-10-19_sabah}, kullanicilar/{uid}/quiz/{2026-10-19}
+// Firebase Console > Firestore Database > Kurallar sekmesine olduğu gibi yapıştırılır.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Her kullanıcı yalnızca kendi kayıtlarını okur, yazar ve siler.
+    match /kullanicilar/{uid}/{tur}/{belge} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && tur in ['kelime', 'quiz']
+        && request.resource.data.keys().size() <= 12;
+    }
+    // Başka her şey kapalı.
+    match /{belge=**} {
+      allow read, write: if false;
+    }
+  }
+}

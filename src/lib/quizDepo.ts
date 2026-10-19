@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { oku, yaz } from './depo'
+import { bulutaBildir, depoDegisti } from './senkron'
 import { gunEkle, bugun } from './tarih'
 import type { GunVerisi, QuizPlani, QuizSorusu } from './tipler'
 
@@ -7,6 +8,7 @@ export interface QuizKaydi {
   cevaplar: (number | null)[] // sira - 1 konumunda seçilen indeks; açılmamış veya cevaplanmamış soru null
   dogru: number
   cozulme: string // son cevabın verildiği gün; seri yalnızca o gün tamamlanan quizleri sayar
+  guncelleme?: number // ms; hesap eşitlemesi için (eski kayıtlarda yok)
 }
 
 const ANAHTAR = 'quiz-sonuclari'
@@ -17,11 +19,24 @@ export const quizKaydi = (tarih: string) => quizKayitlari()[tarih] ?? null
 
 export function quizKaydet(tarih: string, kayit: QuizKaydi) {
   const k = quizKayitlari()
+  kayit = { ...kayit, guncelleme: Date.now() }
   k[tarih] = kayit
   yaz(ANAHTAR, k)
+  depoDegisti()
+  bulutaBildir('quiz', tarih, kayit)
 }
 
 export const cevapSayisi = (k: QuizKaydi | null) => (k ? k.cevaplar.filter((c) => c !== null && c !== undefined).length : 0)
+
+/** Buluttan gelen kayıtları birleştirir (daha çok cevaplı olan kalır); yerelde daha ileri olanların tarihlerini döner. */
+export function quizBirlestir(bulut: Kayitlar): string[] {
+  const yerel = quizKayitlari()
+  for (const [tarih, kayit] of Object.entries(bulut)) if (cevapSayisi(kayit) > cevapSayisi(yerel[tarih] ?? null)) yerel[tarih] = kayit
+  yaz(ANAHTAR, yerel)
+  return Object.keys(yerel).filter((t) => cevapSayisi(yerel[t]) > cevapSayisi(bulut[t] ?? null))
+}
+
+export const quizDeposunuTemizle = () => yaz(ANAHTAR, {})
 export const quizTamam = (k: QuizKaydi | null) => cevapSayisi(k) >= 3
 
 /** Bugün veya dün biten, art arda tamamlanmış günlerin sayısı. */

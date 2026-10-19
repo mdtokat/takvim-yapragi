@@ -1056,6 +1056,25 @@ input[type='time'] {
 .ayarlar {
   padding: 4px 4px 0;
 }
+.hesap-ad {
+  margin: 4px 0 2px;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-baslik);
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+.hesap-ad small {
+  font-family: var(--font-metin);
+  font-weight: 400;
+}
+.hesap-onay {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--kirmizi);
+  background: var(--kirmizi-zemin);
+}
 .ayar-bolum {
   background: var(--kagit);
   border: 1px solid var(--cizgi);
@@ -1785,25 +1804,19 @@ input[type='time'] {
   font-weight: 800;
   line-height: 1.1;
 }
-.dagilim-ust {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
-}
 .dagilim-baslik {
-  margin: 0;
+  margin: 0 0 4px;
   font-family: var(--font-baslik);
   font-size: 1rem;
 }
-.sonuc-genel {
-  font-size: 0.82rem;
+.sonuc-hesap {
+  margin: 0 0 10px !important;
+  font-size: 0.85rem;
+  line-height: 1.35;
   color: var(--soluk);
-  white-space: nowrap;
 }
-.sonuc-genel strong {
-  color: var(--murekkep);
+.sonuc-hesap .metin-dugme {
+  font-size: 0.9rem;
 }
 .dagilim {
   list-style: none;

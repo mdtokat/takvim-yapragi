@@ -19,6 +19,7 @@ import type { GunVerisi, QuizSorusu } from '../lib/tipler'
 import { GeriDugmesi } from '../components/GeriDugmesi'
 import { Konfeti } from '../components/Konfeti'
 import { sesCal } from '../lib/ses'
+import { useDepoSurumu } from '../lib/senkron'
 
 const HARF = ['A', 'B', 'C', 'D']
 
@@ -64,6 +65,9 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
   const [hata, setHata] = useState(false)
   const [deneme, setDeneme] = useState(0)
   const [kayit, setKayit] = useState<QuizKaydi | null>(() => quizKaydi(tarih))
+  // Hesap eşitlemesi (başka cihazdaki cevaplar) depoyu değiştirirse kayıt yeniden okunur.
+  const depoSurumu = useDepoSurumu()
+  useEffect(() => setKayit(quizKaydi(tarih)), [tarih, depoSurumu])
   // Cevaplandıktan sonra geri bildirimi gösterilen sorunun sıra numarası
   const [gosterilen, setGosterilen] = useState<number | null>(null)
   const [paylasimNotu, setPaylasimNotu] = useState('')

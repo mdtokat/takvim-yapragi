@@ -6,7 +6,9 @@
 > Mindmash'in genel tasarımı `docs/TASARIM.md` dosyasında. Bu dosya yalnızca kelime oyununu anlatır.
 >
 > **Mindmash'teki farklar:**
-> - Oyun `#/kelime` rotasında açılır (`src/views/KelimeEkrani.tsx`). Anonim oturum yalnızca bu sekme açılınca kurulur.
+> - Oyun `#/kelime` rotasında açılır (`src/views/KelimeEkrani.tsx`).
+> - **Oyun durumu Supabase'de değil:** Tahminler cihazda (`src/lib/kelimeDepo.ts`) ve Google ile giriş yapılmışsa Firebase'de tutulur (`docs/FIREBASE.md`). Supabase kullanıcıyı tanımaz; tahminler durumsuz `kb_degerlendir` fonksiyonunda değerlendirilir (Bölüm 9.5). Bölüm 9.1–9.3'teki `kb_denemeler` ve `kb_tahmin` yalnızca eski sürümler için duruyor.
+> - Genel dağılım ("seninle aynı denemede bulanlar") kaldırıldı; istatistikler kullanıcının kendi oyunlarından hesaplanır.
 > - Ayarlar (zor mod, renk körü modu) Mindmash'in Ayarlar ekranındadır. Ayrı hatırlatma yoktur; Mindmash'in günlük bildirimi kelimeyi de duyurur.
 > - Zor mod, günün ilk tahmininde sabitlenir. Oyun ortasında ayarı değiştirmek o günü etkilemez.
 > - **Günde 3 kelime:** Her Mindmash videosunun bir kelimesi vardır (sabah 08:00, öğlen 12:00, akşam 19:00). Kelime videoyla aynı saatte açılır ve o videoda geçer (Bölüm 9.4 ve Bölüm 10). Her kelime ayrı bir oyundur: 6 deneme, kendi sonucu.
@@ -412,6 +414,18 @@ alter table kb_denemeler
 - `video_baslik` boşsa kelime videodan gelmemiştir (plan okunamadı). O zaman ipucu ve sonuçtaki video satırı gösterilmez.
 - Eski istemciler için tek argümanlı imzalar (`kb_tahmin(text)` vb.) sabah kelimesine yönlendirilir; `kb_bugun()` eski `hazir` alanını sabah kelimesine göre doldurur.
 - İstatistik: her kelime ayrı oyundur (oynanan, kazanma oranı, dağılım). Seri, en az bir kelimenin bulunduğu art arda günlerdir.
+
+### 9.5 Durumsuz değerlendirme (Firebase dönemi)
+
+Göç: `supabase/migrations/20261019150000_mindmash_durumsuz_kelime.sql`.
+
+- `kb_degerlendir(p_tarih, p_slot, p_tahminler text[])`: `anon` çağırabilir. O kelimenin bütün tahminleri (1–6, yenisi sonda) gönderilir.
+  - Yalnızca bugünün veya geçmiş günlerin, `acilis <= now()` olan kelimesi değerlendirilir; yoksa `bulmaca_yok`.
+  - Sözlükte olmayan tahmin varsa `{gecerli: false, gecersiz: sıra}` döner (hak harcatmaz).
+  - Doğru tahminden sonra tahmin gelirse `oyun_bitti`.
+  - Aksi halde `{gecerli, sonuclar: [[...renkler]], dogru, bitti}`; oyun bittiyse (doğru veya 6 tahmin) `cevap`, `anlam`, `ornek`, `video_baslik` da döner.
+- Hiçbir şey kaydetmez. 6 hak sınırı istemcide uygulanır; kötü niyetli biri istediği kadar deneyebilir (anonim hesaplarla bu zaten mümkündü).
+- `kb_kelime_onerileri` için `anon` ekleme politikası eklendi (`kullanici_id` boş).
 
 ---
 
