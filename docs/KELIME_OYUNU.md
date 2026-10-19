@@ -100,17 +100,23 @@ Uygulama web'de (GitHub Pages) ve Android'de (Capacitor ile Google Play) yayınl
 ## 6. Ekranlar
 
 ### 6.1 Oyun (ana ekran)
-- Üst çubuk: Logo, ikonlar (yardım ❓, istatistik 📊)
-- Slot sekmeleri: Sabah · Öğlen · Akşam. Açılmamış sekme saatini gösterir (seçilince "Öğlen kelimesi 12:00'de, öğlen videosuyla birlikte açılır."), biten sekme ✓ veya ✗. Açılışta en yeni açılmış ve bitmemiş kelime seçilir.
-- 6×5 harf ızgarası
+Gazetenin bulmaca köşesi görünümündedir (Mindmash'in almanak düzeni). Yukarıdan aşağıya:
+- **Manşet:** "Kelime" başlığı, altında tarih ("19 Ekim · her videoya bir kelime"); yanlarda yardım ❓ ve istatistik 📊.
+- **Günün programı:** Sabah · Öğlen · Akşam kartları. Her kart videonun saatini ve durumunu yazar: "Seni bekliyor", "2/6 deneme", "Buldun · 3/6", "Bulunamadı". Sıradaki kilitli kart açılışa kalan süreyi sayar ("02:04:55 sonra"), sonrakiler "Kilitli" yazar. Açılışta en yeni açılmış ve bitmemiş kelime seçilir.
+- **Sıradaki kelime satırı:** "Sıradaki kelime akşam videosuyla 19:00'da açılıyor." Üç kelime de açıksa yarının ilk kelimesinin saatini yazar. Kısa ekranlarda gizlenir (geri sayım programda kalır).
+- **Tahta:** 6×5 bulmaca kutuları, solda satır numarası. Etkin satır kırmızı numarayla, sıradaki kutu kırmızı alt çizgiyle gösterilir. Kutular kalan yüksekliğe göre ölçeklenir.
   - Harf yazılırken küçük "pop" animasyonu
-  - Değerlendirmede kartlar soldan sağa sırayla çevrilir
+  - Değerlendirmede kutular soldan sağa sırayla çevrilir
+- **Kilitli kelime:** Tahtanın yerinde videonun saati ve kalan süre ("Akşam kelimesi · 19:00 · 02:04:55 kaldı").
+- **Deneme sayacı:** "Deneme 2/6 · öğlen videosunda geçiyor" (kelime videodan geldiyse).
+- **Gönder düğmesi:** Klavyenin üstünde, tam genişlikte. Beş harf girilene kadar pasiftir; beşinci harfle etkinleşir. Fiziksel klavyede Enter da gönderir.
+- **Bitmiş kelime:** Klavyenin yerine özet gelir: "3. denemede buldun", kelime ve anlamı, "Sonucu gör" ve varsa açık başka kelimeye geçiş ("Öğlen kelimesine geç").
 - Geçersiz kelimede satır sallanır, "Sözlükte yok" uyarısı çıkar ve "Önerilsin mi?" linki gösterilir.
-- **Ekran klavyesi (Türkçe Q düzeni):**
+- **Ekran klavyesi (Türkçe Q düzeni):** Gönderme klavyede değil, Gönder düğmesindedir.
   ```
   E R T Y U I O P Ğ Ü
   A S D F G H J K L Ş İ
-  ↵ Z C V B N M Ö Ç ⌫
+  Z C V B N M Ö Ç ⌫
   ```
   - Tuşlar o güne kadarki en iyi durumuna göre renklenir (yeşil > sarı > gri).
 

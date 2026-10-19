@@ -113,8 +113,9 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 ### 5.6 Kelime
 - Harfiyen oyunu, alt menüde "Kelime" sekmesi. Ayrıntılar `docs/KELIME_OYUNU.md`.
 - Günde 3 kelime, her videoya bir tane: sabah 08:00, öğlen 12:00, akşam 19:00. Her kelime videosuyla aynı saatte açılır ve o videoda geçer.
-- Tahtanın üstünde üç sekme vardır (Sabah, Öğlen, Akşam). Açılmamış sekme saatini, biten sekme ✓ veya ✗ gösterir.
-- Kelime videodan geliyorsa tahtanın üstünde ipucu yazar: "Bu kelime sabah videosunda geçiyor."
+- Ekran gazetenin bulmaca köşesi gibidir: manşet, günün programı (Sabah, Öğlen, Akşam kartları; saat, durum ve sıradaki kelimeye geri sayım), "Sıradaki kelime … açılıyor" satırı, tahta, 5 harf girilince etkinleşen Gönder düğmesi ve klavye. Ayrıntılar `docs/KELIME_OYUNU.md` Bölüm 6.1.
+- Bugün ekranındaki "Günün kelimesi" köşesi açık kelimeyi ve sıradakinin saatini yazar.
+- Kelime videodan geliyorsa deneme sayacının yanında yazar: "Deneme 2/6 · sabah videosunda geçiyor."
 - Oyun bitince anlam, örnek cümle ve kelimenin geçtiği video gösterilir.
 
 ### 5.5 Ayarlar

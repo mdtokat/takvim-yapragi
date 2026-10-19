@@ -16,7 +16,7 @@ function Ornek({ kelime, vurgu, durum }: { kelime: string; vurgu: number; durum:
 export function YardimPenceresi({ onKapat }: { onKapat: () => void }) {
   return (
     <Pencere baslik="Nasıl oynanır" onKapat={onKapat}>
-      <p>Her gün üç kelime var. Her birini 6 denemede bul. Her tahmin, sözlükte bulunan 5 harfli bir Türkçe kelime olmalı.</p>
+      <p>Her gün üç kelime var. Her birini 6 denemede bul. Her tahmin, sözlükte bulunan 5 harfli bir Türkçe kelime olmalı. Beş harfi yazınca Gönder düğmesi açılır.</p>
       <p>Her tahminden sonra karoların rengi, harfin kelimedeki yerini gösterir.</p>
       <Ornek kelime="KALEM" vurgu={0} durum="yesil" />
       <p className="ornek-metin">K kelimede var ve doğru yerde.</p>

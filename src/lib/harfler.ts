@@ -5,7 +5,7 @@ export const DENEME_SAYISI = 6
 export const KLAVYE_SATIRLARI: string[][] = [
   ['E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Ğ', 'Ü'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ş', 'İ'],
-  ['GIR', 'Z', 'C', 'V', 'B', 'N', 'M', 'Ö', 'Ç', 'SIL'],
+  ['Z', 'C', 'V', 'B', 'N', 'M', 'Ö', 'Ç', 'SIL'],
 ]
 
 const SAPKALAR: Record<string, string> = { â: 'a', Â: 'A', î: 'i', Î: 'İ', û: 'u', Û: 'U' }
@@ -52,3 +52,7 @@ export function zorModHatasi(tahmin: string, satirlar: { tahmin: string; sonuc: 
   }
   return null
 }
+
+/** Bir kelimenin oyunu: yeşil satır varsa kazanılmış, 6 deneme dolduysa bitmiştir. */
+export const kazanildi = (satirlar: { sonuc: Durum[] }[]) => satirlar.some((r) => r.sonuc.every((d) => d === 'yesil'))
+export const oyunBitti = (satirlar: { sonuc: Durum[] }[]) => kazanildi(satirlar) || satirlar.length >= DENEME_SAYISI

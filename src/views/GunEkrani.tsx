@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { gunuGetir, onbellektekiGun, rastgeleDoluGun } from '../lib/api'
-import { bugun, gunEkle, tarihCoz, artikYil, saatteMetni } from '../lib/tarih'
+import { bugun, gunEkle, tarihCoz, artikYil, saatteMetni, trBugun, trZamani } from '../lib/tarih'
 import { degistir, git } from '../lib/yonlendirme'
 import { ayarlariGuncelle, useAyarlar } from '../lib/ayarlar'
 import { cevabi, cevapSayisi, quizKaydi, quizTamam, seri, soruDurumlari, useAcilisYenile, type QuizKaydi, type SoruDurumu } from '../lib/quizDepo'
-import { SLOT_ADI } from '../lib/sabitler'
+import { SLOT_ADI, SLOT_SAATI, type Slot } from '../lib/sabitler'
 import { TURLER, type GunVerisi, type GununBilgisi, type Tur } from '../lib/tipler'
 import { sesCal } from '../lib/ses'
 import { hareketAzalt } from '../lib/platform'
@@ -20,6 +20,19 @@ function soruDurumMetni(durumlar: SoruDurumu[], kayit: QuizKaydi | null): string
   const siradaki = durumlar.find((d) => !d.soru)
   if (siradaki?.acilis) return `${cevapSayisi(kayit) ? 'Sıradaki' : 'İlk'} soru ${saatteMetni(siradaki.acilis)} açılır`
   return 'Cevaplarını gör'
+}
+
+/** Kelimeler videolarla birlikte açılır; köşe açık olanı ve sıradakinin saatini yazar. */
+function kelimeDurumMetni(simdi = Date.now()): string {
+  const gun = trBugun(new Date(simdi))
+  const slotlar = Object.keys(SLOT_SAATI) as Slot[]
+  const acilis = (s: Slot, g = gun) => trZamani(g, SLOT_SAATI[s])
+  const acik = slotlar.filter((s) => acilis(s) <= simdi)
+  const siradaki = slotlar.find((s) => acilis(s) > simdi)
+  if (!siradaki) return `Üç kelime de açık. Yarın ilki ${saatteMetni(new Date(acilis('sabah', gunEkle(gun, 1))).toISOString())}`
+  const saat = saatteMetni(new Date(acilis(siradaki)).toISOString())
+  if (acik.length === 0) return `İlk kelime ${saat} açılıyor`
+  return `${SLOT_ADI[acik[acik.length - 1]]} kelimesi açık. Sıradaki ${saat}`
 }
 
 interface Gecis {
@@ -168,7 +181,7 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
           {tarih === bugun() && (
             <a className="kose" href="#/kelime">
               <span className="kose-baslik">Günün kelimesi</span>
-              <span className="kose-durum">Her videoyla bir kelime: 08:00, 12:00 ve 19:00</span>
+              <span className="kose-durum">{kelimeDurumMetni()}</span>
             </a>
           )}
         </div>
