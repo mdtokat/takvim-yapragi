@@ -62,11 +62,8 @@ export function gunFarki(a: string, b: string): number {
 
 export const bulmacaNo = (tarih: string) => gunFarki(BASLANGIC, tarih) + 1
 
-/** Türkiye saatiyle bir sonraki gece yarısına kalan milisaniye. */
-export function geceYarisinaKalan(simdi = new Date()): number {
-  const yarin = gunEkle(trBugun(simdi), 1)
-  return Date.parse(`${yarin}T00:00:00Z`) - TR_OFSET_MS - simdi.getTime()
-}
+/** Türkiye saatiyle bir tarih ve "HH:MM" saatin zaman damgası (ms). */
+export const trZamani = (tarih: string, saat: string) => Date.parse(`${tarih}T${saat}:00Z`) - TR_OFSET_MS
 
 export function sureMetni(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000))

@@ -3,13 +3,15 @@ import { Pencere } from './Pencere'
 import type { Istatistik } from '../../lib/istatistik'
 import type { BitisBilgisi, Satir } from '../../lib/kelimeOyunu'
 import { genelDagilim } from '../../lib/kelimeOyunu'
-import { bulmacaNo, geceYarisinaKalan, sureMetni } from '../../lib/tarih'
+import { bulmacaNo, sureMetni } from '../../lib/tarih'
 import { linkAc, paylas } from '../../lib/platform'
-import { zorModGunu, useAyarlar } from '../../lib/ayarlar'
-import { SITE_URL, SLOT_ADI, UYGULAMA_ADI, VIDEO_VARSAYILAN_URL } from '../../lib/sabitler'
+import { zorModOyunu, useAyarlar } from '../../lib/ayarlar'
+import { SITE_URL, SLOT_ADI, UYGULAMA_ADI, VIDEO_VARSAYILAN_URL, type Slot } from '../../lib/sabitler'
 
 interface Props {
   tarih: string
+  slot: Slot | null
+  sonrakiAcilis: number // ms; geri sayım bu ana kadar
   satirlar: Satir[]
   bitti: boolean
   kazandi: boolean
@@ -19,24 +21,27 @@ interface Props {
   onBildir: (metin: string) => void
 }
 
-export function SonucPenceresi({ tarih, satirlar, bitti, kazandi, bitis, istatistik, onKapat, onBildir }: Props) {
+export function SonucPenceresi({ tarih, slot, sonrakiAcilis, satirlar, bitti, kazandi, bitis, istatistik, onKapat, onBildir }: Props) {
   const ayar = useAyarlar()
-  const [kalan, setKalan] = useState(geceYarisinaKalan())
+  const [kalan, setKalan] = useState(sonrakiAcilis - Date.now())
   const [genel, setGenel] = useState<{ deneme: number; oyuncu: number }[]>([])
 
   useEffect(() => {
-    const t = setInterval(() => setKalan(geceYarisinaKalan()), 1000)
+    setKalan(sonrakiAcilis - Date.now())
+    const t = setInterval(() => setKalan(sonrakiAcilis - Date.now()), 1000)
     return () => clearInterval(t)
-  }, [])
+  }, [sonrakiAcilis])
   useEffect(() => {
-    if (bitti) void genelDagilim(tarih).then(setGenel)
-  }, [bitti, tarih])
+    if (bitti && slot) void genelDagilim(tarih, slot).then(setGenel)
+  }, [bitti, tarih, slot])
 
   const paylasimMetni = () => {
     const [y, s, g] = ayar.renkKoru ? ['🟧', '🟦', '⬛'] : ['🟩', '🟨', '⬛']
     const izgara = satirlar.map((r) => r.sonuc.map((d) => (d === 'yesil' ? y : d === 'sari' ? s : g)).join('')).join('\n')
     const skor = kazandi ? satirlar.length : 'X'
-    return `${UYGULAMA_ADI} Kelime #${bulmacaNo(tarih)} ${skor}/6${zorModGunu(tarih) ? '*' : ''}\n${izgara}\n${SITE_URL}#/kelime`
+    const ad = slot ? ` ${SLOT_ADI[slot]}` : ''
+    const zor = slot && zorModOyunu(tarih, slot) ? '*' : ''
+    return `${UYGULAMA_ADI} Kelime #${bulmacaNo(tarih)}${ad} ${skor}/6${zor}\n${izgara}\n${SITE_URL}#/kelime`
   }
 
   const toplamOyuncu = genel.reduce((a, b) => a + b.oyuncu, 0)
@@ -57,10 +62,9 @@ export function SonucPenceresi({ tarih, satirlar, bitti, kazandi, bitis, istatis
           </div>
           <p className="sonuc-anlam">{bitis.anlam}</p>
           <p className="sonuc-ornek">“{bitis.ornek}”</p>
-          {bitis.videoSlot && (
+          {slot && bitis.videoBaslik && (
             <p className="sonuc-video">
-              Bu kelime bugünkü {SLOT_ADI[bitis.videoSlot].toLocaleLowerCase('tr-TR')} videosunda geçiyor
-              {bitis.videoBaslik ? `: ${bitis.videoBaslik}.` : '.'}{' '}
+              Bu kelime bugünkü {SLOT_ADI[slot].toLocaleLowerCase('tr-TR')} videosunda geçiyor: {bitis.videoBaslik}.{' '}
               <button className="metin-dugme" onClick={() => void linkAc(VIDEO_VARSAYILAN_URL)}>
                 Videoyu izle
               </button>
@@ -71,7 +75,7 @@ export function SonucPenceresi({ tarih, satirlar, bitti, kazandi, bitis, istatis
 
       {bitti && toplamOyuncu >= 5 && (
         <p className="sonuc-genel">
-          {kazandi ? 'Bugün seninle aynı denemede bulanlar' : 'Bugün kelimeyi bulamayanlar'}: <strong>%{Math.round((benimGrup / toplamOyuncu) * 100)}</strong>
+          {kazandi ? 'Seninle aynı denemede bulanlar' : 'Kelimeyi bulamayanlar'}: <strong>%{Math.round((benimGrup / toplamOyuncu) * 100)}</strong>
         </p>
       )}
 

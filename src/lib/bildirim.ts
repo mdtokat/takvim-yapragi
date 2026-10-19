@@ -47,7 +47,7 @@ export async function bildirimleriPlanla(): Promise<void> {
       liste.push({
         id: Number(tarih.replaceAll('-', '').slice(2)), // ör. 261017
         title: bilgi ? bilgi.baslik : 'Bugün tarihte neler oldu?',
-        body: 'Günün yaprağı ve kelimesi hazır. Sorular videolarla birlikte açılıyor.',
+        body: 'Günün yaprağı hazır. Sorular ve kelimeler videolarla birlikte açılıyor.',
         schedule: { at: d, allowWhileIdle: true },
       })
     }

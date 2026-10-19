@@ -1122,6 +1122,7 @@ input[type='time'] {
 .kelime {
   --ust: 52px;
   --klavye: 188px;
+  --slotlar: 40px;
   --ipucu: 0px;
   --aralik: 6px;
   --yukseklik: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - var(--alt-menu) - 22px);
@@ -1181,6 +1182,13 @@ input[type='time'] {
 .logo-karo.karo-sari {
   color: var(--karo-yazi);
 }
+.kelime-slotlar {
+  height: var(--slotlar);
+  flex: none;
+}
+.kelime-slotlar .sekme:disabled {
+  opacity: 0.6;
+}
 .kelime-ipucu {
   height: var(--ipucu);
   flex: none;
@@ -1204,7 +1212,7 @@ input[type='time'] {
   --boyut: min(
     62px,
     calc((100vw - 36px - 4 * var(--aralik)) / 5),
-    calc((var(--yukseklik) - var(--ust) - var(--ipucu) - var(--klavye) - 28px - 5 * var(--aralik)) / 6)
+    calc((var(--yukseklik) - var(--ust) - var(--slotlar) - var(--ipucu) - var(--klavye) - 28px - 5 * var(--aralik)) / 6)
   );
   display: grid;
   gap: var(--aralik);

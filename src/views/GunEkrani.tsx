@@ -168,7 +168,7 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
           {tarih === bugun() && (
             <a className="kose" href="#/kelime">
               <span className="kose-baslik">Günün kelimesi</span>
-              <span className="kose-durum">5 harfli kelimeyi 6 denemede bul</span>
+              <span className="kose-durum">Her videoyla bir kelime: 08:00, 12:00 ve 19:00</span>
             </a>
           )}
         </div>
