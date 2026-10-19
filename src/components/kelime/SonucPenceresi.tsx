@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Pencere } from './Pencere'
 import type { Istatistik } from '../../lib/istatistik'
 import type { BitisBilgisi, Satir } from '../../lib/kelimeOyunu'
@@ -25,6 +25,15 @@ export function SonucPenceresi({ tarih, slot, sonrakiAcilis, satirlar, bitti, ka
   const ayar = useAyarlar()
   const [kalan, setKalan] = useState(sonrakiAcilis - Date.now())
   const [genel, setGenel] = useState<{ deneme: number; oyuncu: number }[]>([])
+  // Anlam ve örnek cümle pencere kaydırma gerektirmesin diye satır sınırıyla kısalır; taşarsa "Devamını oku" çıkar.
+  const metinRef = useRef<HTMLDivElement>(null)
+  const [tasiyor, setTasiyor] = useState(false)
+  const [acik, setAcik] = useState(false)
+  useLayoutEffect(() => {
+    const e = metinRef.current
+    if (!e || acik) return
+    setTasiyor([...e.children].some((c) => c.scrollHeight > c.clientHeight + 1))
+  }, [bitis, acik])
 
   useEffect(() => {
     setKalan(sonrakiAcilis - Date.now())
@@ -48,35 +57,44 @@ export function SonucPenceresi({ tarih, slot, sonrakiAcilis, satirlar, bitti, ka
   const benimDeneme = kazandi ? satirlar.length : 0
   const benimGrup = genel.find((g) => g.deneme === benimDeneme)?.oyuncu ?? 0
   const enCok = Math.max(1, ...(istatistik?.dagilim ?? [1]))
+  const skorMetni = kazandi ? `${satirlar.length}/6` : 'X/6'
 
   return (
-    <Pencere baslik={bitti ? (kazandi ? 'Buldun' : 'Bu sefer olmadı') : 'İstatistikler'} onKapat={onKapat}>
+    <Pencere baslik={bitti ? (kazandi ? 'Buldun' : 'Bu sefer olmadı') : 'İstatistikler'} sinif="pencere-sonuc" onKapat={onKapat}>
       {bitti && bitis && (
         <section className="sonuc-kelime">
-          <div className="sonuc-karolar" aria-label={`Kelime: ${bitis.cevap}`}>
-            {[...bitis.cevap].map((h, i) => (
-              <span key={i} className="karo karo-kucuk karo-yesil" aria-hidden="true">
-                {h}
-              </span>
-            ))}
+          <div className="sonuc-ust">
+            <div className="sonuc-karolar" aria-label={`Kelime: ${bitis.cevap}`}>
+              {[...bitis.cevap].map((h, i) => (
+                <span key={i} className="karo karo-kucuk karo-yesil" aria-hidden="true">
+                  {h}
+                </span>
+              ))}
+            </div>
+            <span className="sonuc-skor" aria-label={kazandi ? `${satirlar.length}. denemede` : 'Bulunamadı'}>
+              {skorMetni}
+            </span>
           </div>
-          <p className="sonuc-anlam">{bitis.anlam}</p>
-          <p className="sonuc-ornek">“{bitis.ornek}”</p>
+          <div ref={metinRef} className={`sonuc-metin${acik ? ' acik' : ''}`}>
+            <p className="sonuc-anlam">{bitis.anlam}</p>
+            <p className="sonuc-ornek">“{bitis.ornek}”</p>
+          </div>
+          {tasiyor && !acik && (
+            <button className="metin-dugme sonuc-devam" onClick={() => setAcik(true)}>
+              Devamını oku
+            </button>
+          )}
           {slot && bitis.videoBaslik && (
             <p className="sonuc-video">
-              Bu kelime bugünkü {SLOT_ADI[slot].toLocaleLowerCase('tr-TR')} videosunda geçiyor: {bitis.videoBaslik}.{' '}
+              <span>
+                {SLOT_ADI[slot]} videosu: {bitis.videoBaslik}
+              </span>
               <button className="metin-dugme" onClick={() => void linkAc(VIDEO_VARSAYILAN_URL)}>
                 Videoyu izle
               </button>
             </p>
           )}
         </section>
-      )}
-
-      {bitti && toplamOyuncu >= 5 && (
-        <p className="sonuc-genel">
-          {kazandi ? 'Seninle aynı denemede bulanlar' : 'Kelimeyi bulamayanlar'}: <strong>%{Math.round((benimGrup / toplamOyuncu) * 100)}</strong>
-        </p>
       )}
 
       {istatistik && (
@@ -99,16 +117,27 @@ export function SonucPenceresi({ tarih, slot, sonrakiAcilis, satirlar, bitti, ka
               <dd>{istatistik.enIyiSeri}</dd>
             </div>
           </dl>
-          <h3 className="dagilim-baslik">Kaçıncı denemede buldun</h3>
+          <div className="dagilim-ust">
+            <h3 className="dagilim-baslik">Deneme dağılımı</h3>
+            {bitti && toplamOyuncu >= 5 && (
+              <p className="sonuc-genel">
+                {kazandi ? 'Seninle aynı' : 'Bulamayan'}: <strong>%{Math.round((benimGrup / toplamOyuncu) * 100)}</strong>
+              </p>
+            )}
+          </div>
+          {/* Sütunlar: her denemede kaç kelime bulundu; bu kelimenin sütunu vurgulu */}
           <ol className="dagilim">
             {istatistik.dagilim.map((n, i) => (
-              <li key={i}>
-                <span className="dagilim-no">{i + 1}</span>
-                <span
-                  className={`dagilim-cubuk${kazandi && satirlar.length === i + 1 ? ' bugun' : ''}`}
-                  style={{ width: `${Math.max(8, (n / enCok) * 100)}%` }}
-                >
-                  {n}
+              <li key={i} aria-label={`${i + 1}. denemede ${n} kez`}>
+                <span className="dagilim-sutun" aria-hidden="true">
+                  <span className="dagilim-sayi">{n}</span>
+                  <span
+                    className={`dagilim-cubuk${kazandi && satirlar.length === i + 1 ? ' bugun' : ''}`}
+                    style={{ height: `${Math.max(3, Math.round((n / enCok) * 30))}px` }}
+                  />
+                </span>
+                <span className="dagilim-no" aria-hidden="true">
+                  {i + 1}
                 </span>
               </li>
             ))}

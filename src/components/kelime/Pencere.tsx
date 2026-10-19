@@ -2,11 +2,12 @@ import { useEffect, useRef, type ReactNode } from 'react'
 
 interface Props {
   baslik: string
+  sinif?: string
   onKapat: () => void
   children: ReactNode
 }
 
-export function Pencere({ baslik, onKapat, children }: Props) {
+export function Pencere({ baslik, sinif, onKapat, children }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     const d = ref.current
@@ -15,7 +16,7 @@ export function Pencere({ baslik, onKapat, children }: Props) {
   return (
     <dialog
       ref={ref}
-      className="pencere"
+      className={`pencere${sinif ? ` ${sinif}` : ''}`}
       aria-label={baslik}
       onCancel={(e) => {
         e.preventDefault()
