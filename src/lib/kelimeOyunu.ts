@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { Durum } from './harfler'
 import type { Slot } from './sabitler'
+import type { DenemeKaydi } from './istatistik'
 
 export interface Satir {
   tahmin: string
@@ -11,19 +12,26 @@ export interface BitisBilgisi {
   cevap: string
   anlam: string
   ornek: string
-  videoSlot: Slot | null
-  videoBaslik: string | null
+  videoBaslik: string | null // boşsa kelime videodan gelmemiştir
+}
+
+/** Günün üç kelimesinden biri; her kelime kendi videosunun yayın saatinde açılır. */
+export interface KelimeSlotu {
+  slot: Slot
+  acilis: string
+  acik: boolean
+  videoBaslik: string | null // yalnızca açılmış kelimede dolu
 }
 
 export interface BugunBilgisi {
   tarih: string
-  hazir: boolean
-  videoSlot: Slot | null // kelimenin geçtiği video (ipucu)
+  slotlar: KelimeSlotu[]
 }
 
 export interface TahminSonucu {
   gecerli: boolean
   tarih?: string
+  slot?: Slot
   sonuc?: Durum[]
   dogru?: boolean
   deneme?: number
@@ -71,22 +79,26 @@ async function oturumAc(): Promise<void> {
 export async function bugunuSor(): Promise<BugunBilgisi> {
   const { data, error } = await supabase.rpc('kb_bugun')
   if (error) throw new OyunHatasi('baglanti', error.message)
-  const d = data as { tarih: string; hazir: boolean; video_slot?: Slot | null }
-  return { tarih: d.tarih, hazir: d.hazir, videoSlot: d.video_slot ?? null }
+  const d = data as { tarih: string; slotlar?: { slot: Slot; acilis: string; acik: boolean; video_baslik: string | null }[] }
+  return {
+    tarih: d.tarih,
+    slotlar: (d.slotlar ?? []).map((s) => ({ slot: s.slot, acilis: s.acilis, acik: s.acik, videoBaslik: s.video_baslik ?? null })),
+  }
 }
 
-export async function denemeleriGetir(tarih: string): Promise<Satir[]> {
+export async function denemeleriGetir(tarih: string, slot: Slot): Promise<Satir[]> {
   const { data, error } = await supabase
     .from('kb_denemeler')
     .select('sira, tahmin, sonuc')
     .eq('tarih', tarih)
+    .eq('slot', slot)
     .order('sira')
   if (error) throw new OyunHatasi('baglanti', error.message)
   return (data ?? []).map((r) => ({ tahmin: r.tahmin as string, sonuc: r.sonuc as Durum[] }))
 }
 
-export async function tahminGonder(kelime: string): Promise<TahminSonucu> {
-  const { data, error } = await supabase.rpc('kb_tahmin', { p_tahmin: kelime })
+export async function tahminGonder(kelime: string, slot: Slot): Promise<TahminSonucu> {
+  const { data, error } = await supabase.rpc('kb_tahmin', { p_tahmin: kelime, p_slot: slot })
   if (error) {
     const m = error.message ?? ''
     if (m.includes('oyun_bitti')) throw new OyunHatasi('oyun_bitti')
@@ -98,15 +110,15 @@ export async function tahminGonder(kelime: string): Promise<TahminSonucu> {
   return data as TahminSonucu
 }
 
-export async function bitisBilgisi(tarih: string): Promise<BitisBilgisi | null> {
-  const { data, error } = await supabase.rpc('kb_bitis_bilgisi', { p_tarih: tarih })
+export async function bitisBilgisi(tarih: string, slot: Slot): Promise<BitisBilgisi | null> {
+  const { data, error } = await supabase.rpc('kb_bitis_bilgisi', { p_tarih: tarih, p_slot: slot })
   if (error || !data) return null
-  const d = data as { cevap: string; anlam: string; ornek: string; video_slot?: Slot | null; video_baslik?: string | null }
-  return { cevap: d.cevap, anlam: d.anlam, ornek: d.ornek, videoSlot: d.video_slot ?? null, videoBaslik: d.video_baslik ?? null }
+  const d = data as { cevap: string; anlam: string; ornek: string; video_baslik?: string | null }
+  return { cevap: d.cevap, anlam: d.anlam, ornek: d.ornek, videoBaslik: d.video_baslik ?? null }
 }
 
-export async function genelDagilim(tarih: string): Promise<{ deneme: number; oyuncu: number }[]> {
-  const { data, error } = await supabase.rpc('kb_dagilim', { p_tarih: tarih })
+export async function genelDagilim(tarih: string, slot: Slot): Promise<{ deneme: number; oyuncu: number }[]> {
+  const { data, error } = await supabase.rpc('kb_dagilim', { p_tarih: tarih, p_slot: slot })
   if (error) return []
   return ((data ?? []) as { deneme: number; oyuncu: number }[]).map((r) => ({ deneme: Number(r.deneme), oyuncu: Number(r.oyuncu) }))
 }
@@ -120,14 +132,15 @@ export async function kelimeOner(kelime: string): Promise<boolean> {
 }
 
 /** Kullanıcının tüm deneme kayıtları (istatistik için). PostgREST sayfa sınırı nedeniyle parça parça okunur. */
-export async function tumDenemeler(): Promise<{ tarih: string; sira: number; dogru: boolean }[]> {
-  const sonuc: { tarih: string; sira: number; dogru: boolean }[] = []
+export async function tumDenemeler(): Promise<DenemeKaydi[]> {
+  const sonuc: DenemeKaydi[] = []
   const parca = 1000
   for (let bas = 0; bas < 20000; bas += parca) {
     const { data, error } = await supabase
       .from('kb_denemeler')
-      .select('tarih, sira, dogru')
+      .select('tarih, slot, sira, dogru')
       .order('tarih')
+      .order('slot')
       .order('sira')
       .range(bas, bas + parca - 1)
     if (error) throw new OyunHatasi('baglanti', error.message)
