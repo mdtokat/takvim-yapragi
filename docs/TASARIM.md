@@ -86,7 +86,7 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 - Tarih satırı: büyük kırmızı gün sayısı, yanında "Ekim 2026" ve haftanın günü (pazar kırmızı), altında "Yılın 290. günü" satırı.
 - Gün değiştirme: oklar, yana kaydırma veya klavyede sol/sağ ok. İleri giderken sayfa sol kenarından kitap sayfası gibi çevrilir; geri giderken önceki sayfa geri kapanır. Kaydırırken sayfa parmağı izleyerek dönmeye başlar.
 - **Günün bilgisi:** Sayfanın baş yazısı. Kırmızı küçük etiket ("Günün bilgisi · Kategori"), başlık, büyük kırmızı ilk harfle 2–3 cümle ve "Kaynağı aç" linki
-- Altında iki sütunlu köşeler: "Günün soruları" ve (yalnızca bugünün sayfasında) "Günün kelimesi". Soru köşesi durumu söyler: "Üç soru seni bekliyor", "Öğlen sorusu açıldı", "Sıradaki soru 12:00'de açılır" ya da "2/3 doğru"; seri varsa altında "4 günlük seri" yazar. Kelime köşesi Kelime sekmesine gider.
+- Altında iki sütunlu köşeler: "Günün soruları" ve (yalnızca bugünün sayfasında) "Günün kelimesi". Başlıkların solunda alt menüyle aynı çizgide ikonlar durur (`src/components/KoseIkonu.tsx`): soru balonu ve bulmaca parçası; vurgu kırmızıdır. Soru köşesi durumu söyler: "Üç soru seni bekliyor", "Öğlen sorusu açıldı", "Sıradaki soru 12:00'de açılır" ya da "2/3 doğru"; seri varsa altında "4 günlük seri" yazar. Kelime köşesi Kelime sekmesine gider.
 - "Tarihte bugün" başlığı, sekmeler: Olaylar · Doğumlar · Ölümler
 - Kategori çipleri (çoklu seçim, tercih yerel olarak hatırlanır)
 - Kronolojik olay listesi. Her satırda yıl, başlık ve altında italik "Kategori · X yıl önce" yer alır.

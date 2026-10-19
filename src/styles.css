@@ -414,6 +414,24 @@ h2 {
 .kose:active {
   background: var(--kagit);
 }
+.kose-ust {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.kose-ikon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  color: var(--murekkep);
+}
+.kose-ikon-vurgu {
+  fill: var(--kirmizi);
+}
+path.kose-ikon-vurgu {
+  fill: none;
+  stroke: var(--kirmizi);
+}
 .kose-baslik {
   font-family: var(--font-baslik);
   font-weight: 700;

@@ -12,6 +12,7 @@ import { hareketAzalt } from '../lib/platform'
 import { Yaprak } from '../components/Yaprak'
 import { OlayListesi } from '../components/OlayListesi'
 import { KategoriSecici } from '../components/KategoriSecici'
+import { KelimeIkonu, SoruIkonu } from '../components/KoseIkonu'
 
 function soruDurumMetni(durumlar: SoruDurumu[], kayit: QuizKaydi | null): string {
   if (quizTamam(kayit)) return `${kayit!.dogru}/3 doğru`
@@ -175,14 +176,20 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
         <div className="koseler">
           {quizHazir && (
             <a className="kose" href={`#/quiz/${tarih}`}>
-              <span className="kose-baslik">Günün soruları</span>
+              <span className="kose-ust">
+                <SoruIkonu />
+                <span className="kose-baslik">Günün soruları</span>
+              </span>
               <span className="kose-durum">{soruDurumMetni(durumlar, quizSonucu)}</span>
               {tarih === bugun() && seri() > 0 && <span className="seri">{seri()} günlük seri</span>}
             </a>
           )}
           {tarih === bugun() && (
             <a className="kose" href="#/kelime">
-              <span className="kose-baslik">Günün kelimesi</span>
+              <span className="kose-ust">
+                <KelimeIkonu />
+                <span className="kose-baslik">Günün kelimesi</span>
+              </span>
               <span className="kose-durum">{kelimeDurumMetni()}</span>
             </a>
           )}
