@@ -46,6 +46,15 @@ function ayarla(d: Durum) {
   dinleyiciler.forEach((f) => f(durum))
 }
 
+/** React dışından hesap değişikliklerini dinler (ör. sıralama modülü); dinlemeyi bırakan fonksiyon döner. */
+export function hesapDinle(f: (d: Durum) => void): () => void {
+  dinleyiciler.add(f)
+  f(durum)
+  return () => {
+    dinleyiciler.delete(f)
+  }
+}
+
 export function useHesap(): Durum {
   const [d, setD] = useState(durum)
   useEffect(() => {
@@ -89,6 +98,13 @@ function dinlemeyeBasla(): Promise<FirebaseServisleri> {
       })
   }
   return dinleme
+}
+
+/** Girişli kullanıcının Firebase oturum anahtarı (sıralama istekleri için); girişsizse null. */
+export async function kimlikAnahtari(): Promise<string | null> {
+  if (durum.durum !== 'girisli' || !dinleme) return null
+  const fb = await dinleme
+  return (await fb.auth.currentUser?.getIdToken()) ?? null
 }
 
 /** Uygulama açılışında çağrılır. Bu cihazda daha önce giriş yapılmadıysa Firebase hiç yüklenmez. */

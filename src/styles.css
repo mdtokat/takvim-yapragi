@@ -1927,6 +1927,194 @@ input[type='time'] {
   }
 }
 
+/* ===== Sıralama: süre, ad formu, sıralama ekranı ===== */
+/* Sıralamaya giren soru ve kelimede kalan süre: ince çubuk ve saniye; son 10 saniye kırmızı. */
+.sure-sayaci {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+.sure-cubuk {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--cizgi);
+  overflow: hidden;
+}
+.sure-cubuk span {
+  display: block;
+  height: 100%;
+  background: var(--murekkep);
+}
+.sure-saniye {
+  flex: none;
+  min-width: 3.2em;
+  text-align: right;
+  font-family: var(--font-baslik);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.sure-sayaci.az .sure-cubuk span {
+  background: var(--kirmizi);
+}
+.sure-sayaci.az .sure-saniye {
+  color: var(--kirmizi);
+}
+.sure-baslat {
+  margin: 4px 0 16px;
+  padding: 16px;
+  border: 1.5px dashed var(--cizgi);
+  border-radius: 2px;
+  text-align: center;
+}
+.sure-baslat p {
+  margin: 0 0 8px;
+}
+.sure-baslat .dugme {
+  margin-top: 6px;
+  min-width: 140px;
+}
+.sure-baslat-baslik {
+  font-family: var(--font-baslik);
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+.kelime-sure {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 4px;
+}
+.kelime-sure .sure-sayaci {
+  flex: 1;
+  margin: 0;
+}
+.quiz-puan {
+  color: var(--yesil);
+  font-weight: 700;
+}
+.quiz-siralama {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: baseline;
+  margin: 0 0 8px;
+  font-family: var(--font-baslik);
+  font-weight: 700;
+}
+.sonuc-puan {
+  margin: 6px 0 0 !important;
+  font-size: 0.95rem;
+}
+.ad-formu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 10px 0;
+}
+.ad-alani {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+.ad-alani input {
+  font: inherit;
+  font-weight: 400;
+  color: var(--murekkep);
+  background: var(--masa);
+  border: 1px solid var(--cizgi);
+  border-radius: 2px;
+  padding: 10px 12px;
+  min-height: 46px;
+}
+.ad-alani input[aria-invalid='true'] {
+  border-color: var(--kirmizi);
+}
+.pencere-ad .metin-dugme {
+  margin-top: 4px;
+}
+.siralama > h1 {
+  margin-bottom: 6px;
+}
+.siralama-donem {
+  margin: 14px 0 4px;
+}
+.siralama-donem-metni {
+  margin: 4px 0 10px;
+  text-align: center;
+}
+.siralama-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0 14px;
+  background: var(--kagit);
+  border: 1px solid var(--cizgi);
+  border-radius: 2px;
+}
+.siralama-liste li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+}
+.siralama-liste li + li {
+  border-top: 1px solid var(--cizgi);
+}
+.siralama-liste li.ben {
+  margin: 0 -14px;
+  padding: 10px 14px;
+  background: var(--kirmizi-zemin);
+}
+.siralama-sira {
+  flex: none;
+  min-width: 2ch;
+  text-align: right;
+  font-family: var(--font-baslik);
+  font-weight: 800;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.siralama-liste li:nth-child(-n + 3) .siralama-sira {
+  color: var(--kirmizi);
+}
+.siralama-ad {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.siralama-ad small {
+  color: var(--soluk);
+}
+.siralama-puan {
+  flex: none;
+  font-family: var(--font-baslik);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.siralama-ben,
+.siralama-not {
+  margin: 12px 0 0;
+}
+.siralama-ben {
+  font-family: var(--font-baslik);
+  font-weight: 700;
+}
+.siralama-kurallar {
+  margin-top: 18px;
+  color: var(--soluk);
+  font-size: 0.92rem;
+}
+.siralama-kurallar summary {
+  cursor: pointer;
+  color: var(--murekkep);
+  font-weight: 600;
+}
+.siralama-kurallar p {
+  margin: 6px 0;
+}
+
 /* ===== Alt menü ===== */
 .alt-menu {
   position: fixed;
@@ -1953,7 +2141,7 @@ input[type='time'] {
   color: var(--soluk);
   font-family: var(--font-baslik);
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 0.86rem;
 }
 .alt-menu-oge svg {
   width: 24px;

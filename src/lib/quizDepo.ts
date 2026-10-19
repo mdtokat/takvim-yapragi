@@ -4,8 +4,13 @@ import { bulutaBildir, depoDegisti } from './senkron'
 import { gunEkle, bugun } from './tarih'
 import type { GunVerisi, QuizPlani, QuizSorusu } from './tipler'
 
+/** Sıralamaya giren soruda süre dolunca cevap yerine yazılır. */
+export const SURE_DOLDU = -1
+
 export interface QuizKaydi {
-  cevaplar: (number | null)[] // sira - 1 konumunda seçilen indeks; açılmamış veya cevaplanmamış soru null
+  cevaplar: (number | null)[] // sira - 1 konumunda seçilen indeks (SURE_DOLDU: süre doldu); açılmamış veya cevaplanmamış soru null
+  dogrular?: (number | null)[] // sira - 1 konumunda doğru cevabın indeksi; cevaplanınca sunucudan gelir (eski kayıtlarda yok)
+  puanlar?: (number | null)[] // sıralamaya giren sorunun puanı; sıralama dışı cevapta null
   dogru: number
   cozulme: string // son cevabın verildiği gün; seri yalnızca o gün tamamlanan quizleri sayar
   guncelleme?: number // ms; hesap eşitlemesi için (eski kayıtlarda yok)
@@ -67,6 +72,15 @@ export function soruDurumlari(veri: GunVerisi | null): SoruDurumu[] {
 }
 
 export const cevabi = (k: QuizKaydi | null, d: SoruDurumu) => k?.cevaplar[d.sira - 1] ?? null
+
+/** Doğru cevabın indeksi: kayıttan, yoksa (eski önbellekte) sorudan; bilinmiyorsa null. */
+export const dogruCevabi = (k: QuizKaydi | null, d: SoruDurumu) => k?.dogrular?.[d.sira - 1] ?? d.soru?.dogru_index ?? null
+
+/** Günün sıralama puanı; sıralamaya giren soru yoksa null. */
+export function gunPuani(k: QuizKaydi | null): number | null {
+  const p = (k?.puanlar ?? []).filter((x): x is number => typeof x === 'number')
+  return p.length ? p.reduce((a, b) => a + b, 0) : null
+}
 
 /** Kilitli bir sorunun açılış saati gelince (ve uygulama öne gelince) yenile çağrılır. */
 export function useAcilisYenile(durumlar: SoruDurumu[], yenile: () => void) {

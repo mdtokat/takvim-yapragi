@@ -65,6 +65,7 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 | MVP | Olay detay ekranı, kaynak linki ve "Hata bildir" |
 | MVP | Günlük yerel bildirim (Android) |
 | MVP | Açık/koyu tema |
+| MVP | Sıralama: Google ile giriş yapıp Instagram veya Facebook adını yazan oyuncular için süreli sorular (30 sn) ve kelimeler (90 sn); günlük ve haftalık sıralama, kelime ve sorular ayrı (Bölüm 5.7) |
 | **Faz 2** | Yıl dönümü rozetleri ("Bugün 100. yıl dönümü") |
 | Faz 2 | Paylaşım kartı (olayı görsel kart olarak paylaşma, canvas ile) |
 | Faz 2 | Favoriler (yerel) |
@@ -104,6 +105,8 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 - Her soru kendi videosunun yayın saatinde açılır (`tt_quiz.acilis`, varsayılan 08:00 · 12:00 · 19:00, Türkiye saati). Açılmamış soru istemciye hiç gelmez (RLS); ekran yalnızca saatini gösterir: "Sıradaki soru öğlen videosuyla birlikte açılacak."
 - Açık sorular sırayla sorulur. Her cevap hemen kaydedilir; kullanıcı uygulamadan çıkıp sonraki videoda dönebilir.
 - Soru başlığının üstünde kaynağı yazar: "Sabah videosundan · Musluktaki Girdap Bilmecesi".
+- Doğru cevap istemciye gelmez: cevap `tt_quiz_cevapla` RPC'sinde değerlendirilir ve doğru seçenek ancak cevaptan sonra döner. Bu yüzden cevap vermek için bağlantı gerekir.
+- Sıralamaya katılan oyuncu bugünün sorularını süreli oynar (Bölüm 5.7): soru metni "Başla"ya basınca görünür, 30 saniye sayılır; süre dolarsa cevap "Süre doldu" olur.
 - Cevaptan sonra doğru/yanlış, 1 cümlelik açıklama, "Videoyu izle" ve "Kaynak" bağlantıları gelir. Videonun kendi bağlantısı yoksa Instagram hesabı açılır.
 - Üç soru da cevaplanınca sonuç ekranında "3/3" ve seri bilgisi yer alır, paylaş butonu bulunur.
 - Seri yerel olarak (localStorage) tutulur ve yalnızca aynı gün tamamlanan günleri sayar.
@@ -117,6 +120,18 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 - Bugün ekranındaki "Günün kelimesi" köşesi açık kelimeyi ve sıradakinin saatini yazar.
 - Kelime videodan geliyorsa deneme sayacının yanında yazar: "Deneme 2/6 · sabah videosunda geçiyor."
 - Oyun bitince anlam, örnek cümle ve kelimenin geçtiği video gösterilir.
+
+### 5.7 Sıralama
+- Alt menüde "Sıralama" sekmesi (`#/siralama/kelime`, `#/siralama/quiz`). Kelime ve sorular ayrı sekmelerdir; her birinde "Bugün" ve "Bu hafta" seçilir.
+- Hafta Türkiye saatiyle pazartesi 00:00'da başlar ve pazar biter (yeni haftada liste boş başlar; eski puanlar silinmez).
+- Liste ilk 50 oyuncuyu gösterir; oyuncu listede değilse altta "Sen: 132. sıra · 412 puan" yazar. Eşit puanda toplam süresi kısa olan öndedir.
+- **Katılım:** Google ile girişten sonra bir pencere sorar: "Sıralamada hangi adla görünmek istersin?" Instagram kullanıcı adı (@ ile) veya Facebook'taki ad yazılır; adın herkese görüneceği söylenir. "Şimdilik sıralamaya girme" ile atlanabilir; Ayarlar > Sıralama'dan sonra katılınır, ad değiştirilir (haftada bir; ilk 15 dakika serbest) veya sıralamadan çıkılır (ad ve puanlar silinir).
+- **Süre:** Sıralamaya katılan oyuncu yalnızca bugünün sorularını ve kelimelerini süreli oynar. Süre "Başla"ya basınca sunucuda başlar, uygulamadan çıkılsa da durmaz; sunucu ağ gecikmesi için 2 saniye tolerans tanır. Cihazda süresiz oynanmaya başlanmış kelime sıralamaya girmez. Katılmayanlar ve geçmiş günler süresiz ve puansız oynanır.
+- **Puan:**
+  - Soru (30 sn): doğru cevap 50 puan + kalan her saniye 1 puan (en çok 80). Yanlış veya süre dolarsa 0.
+  - Kelime (90 sn): bulunan denemeye göre 100, 80, 60, 40, 25, 10 puan + kalan sürenin her 3 saniyesi için 1 puan (en çok 30). Bulunamazsa veya süre dolarsa 0.
+- **Ad denetimi:** Ad kaydedilince hemen görünür (`durum = 'yeni'`). Kelime bakım görevi adları denetler; uygunsuz veya taklit adlar `red` olur, sıralamada görünmez ve oyuncudan yeni ad istenir. Adın oyuncuya ait olduğu doğrulanmaz.
+- Sıralama Android'de, Google girişi yerel eklentiyle gelene kadar kullanılamaz (`docs/FIREBASE.md`).
 
 ### 5.5 Ayarlar
 - Bildirim açık/kapalı ve saat seçimi
@@ -154,7 +169,8 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 
 - **Ortak altyapı:** Supabase ücretsiz planındaki proje sayısı sınırlı olduğu için uygulamalar **tek projede, tablo önekleriyle** çalışır. Mindmash iki önek kullanır: `tt_` (takvim ve sorular) ve `kb_` (kelime oyunu). `gorev_kayitlari` tablosu ortaktır.
 - **Video kaynağı:** Soruların ve kelimenin hammaddesi `mdtokat/insta-face-youtube` (özel depo) içindeki günlük plan dosyalarıdır: `daily-plans/kaynak/YYYY-AA-GG.yaml`. Uygulama bu depoyu hiç okumaz. Claude zamanlanmış görevleri planı okur ve Supabase'e yazar.
-- **Hesaplar Firebase'de:** Google ile giriş ve kullanıcı verisi (kelime oyunları, quiz cevapları) Firebase'dedir; Supabase kullanıcıyı tanımaz ve uygulama Supabase'de oturum açmaz. Oyun girişsiz de oynanır; sonuçlar önce cihaza yazılır, giriş yapılınca hesapla eşitlenir. Ayrıntılar `docs/FIREBASE.md`.
+- **Hesaplar Firebase'de:** Google ile giriş ve kullanıcı verisi (kelime oyunları, quiz cevapları) Firebase'dedir; uygulama Supabase'de oturum açmaz. Oyun girişsiz de oynanır; sonuçlar önce cihaza yazılır, giriş yapılınca hesapla eşitlenir. Ayrıntılar `docs/FIREBASE.md`.
+- **Sıralama Supabase'de:** Sıralama istekleri (`src/lib/siralama.ts`) Firebase oturum anahtarıyla gider. Supabase'de Firebase projesi üçüncü taraf giriş olarak tanımlıdır ve anahtarı doğrular; sunucu fonksiyonları kullanıcıyı anahtarın `sub` alanından (`tt_firebase_uid()`) tanır. Süre ve puanı sunucu ölçer. İçerik istekleri anahtarsız ayrı istemciden gider.
 - **Anahtarlar:**
   - İstemcide yalnızca `anon` (publishable) anahtar bulunur. Bu anahtarın herkese açık olması normaldir, güvenlik RLS ile sağlanır.
   - `service_role` anahtarı hiçbir yerde kullanılmaz. Claude, Supabase bağlayıcısı üzerinden çalışır.
@@ -288,6 +304,31 @@ create policy tt_hb_ekle on tt_hata_bildirimleri
   with check (durum = 'yeni');
 ```
 
+### 7.2 Sıralama
+
+Göçler: `supabase/migrations/20261019180000_mindmash_siralama.sql` ve `20261019180100_mindmash_siralama_oyuncu_sil.sql` (silme fonksiyonu ayrı; Supabase bağlayıcısı silme içeren göçte onay ister). Tablolarda politika yoktur; istemci yalnızca aşağıdaki `security definer` fonksiyonları çağırır. Kullanıcı kimliği Firebase oturum anahtarından gelir (`tt_firebase_uid()`: `iss = https://securetoken.google.com/mindmash-takvim`, `aud = mindmash-takvim` ise `sub`; anahtarda `role` talebi olmadığı için istek `anon` rolüyle çalışır).
+
+```sql
+tt_oyuncular (uid text pk, ad, ad_turu 'instagram'|'facebook', ad_anahtar unique,
+              durum 'yeni'|'onayli'|'red', ad_degisim, olusturma)
+tt_quiz_puanlari (uid, tarih, sira, baslangic, cevap_zamani, secim, dogru, puan)   -- pk (uid, tarih, sira)
+kb_puanlar       (uid, tarih, slot, baslangic, bitis, tahminler[], durum, puan)    -- pk (uid, tarih, slot)
+-- Puan tabloları tt_oyuncular'a on delete cascade ile bağlıdır.
+```
+
+| Fonksiyon | Ne yapar |
+|---|---|
+| `tt_oyuncu()` | Kendi adı ve durumu (yoksa null) |
+| `tt_oyuncu_kaydet(ad, tur)` | Adı doğrular ve kaydeder. Hatalar: `ad_gecersiz`, `ad_alinmis`, `ad_degisim_siniri` |
+| `tt_oyuncu_sil()` | Adı ve bütün puanları siler (sıralamadan çıkma, hesap silme) |
+| `tt_quiz_durum(tarih, sira, baslat)` | Sıralamaya giren sorunun durumu; `baslat` ile süreyi başlatır (yalnızca bugünün açılmış sorusu). Süresi dolmuşsa sonuçlandırır |
+| `tt_quiz_cevapla(tarih, sira, secim)` | Cevabı değerlendirir ve doğru seçeneği döner. Başlatılmış sıralı soruda süre ve puanı kaydeder (`secim` null: süre doldu); diğer durumda yalnızca sonuç döner |
+| `kb_sirali_durum(tarih, slot, baslat)` | Sıralamaya giren kelimenin durumu ve tahminlerin renkleri; `baslat` ile süreyi başlatır |
+| `kb_sirali_tahmin(tarih, slot, tahmin)` | Tahmini ekler; sözlükte yoksa `gecerli: false` (hak harcatmaz, süre işler). Oyun bitince cevap döner |
+| `tt_siralama(oyun, donem, tarih?)` | `oyun`: `kelime`/`quiz`, `donem`: `gun`/`hafta`. İlk 50 oyuncu ve isteği yapanın sırası; `red` adlar listelenmez. Girişsiz de çağrılır |
+
+- `tt_quiz.dogru_index` sütunu, eski Android sürümü okuduğu için hâlâ `anon` tarafından okunabilir. Yeni istemci okumaz. Eski sürümler güncellenince sütun okumaya kapatılmalı (`revoke select (dogru_index) on tt_quiz from anon, authenticated` ve politikaya uygun sütun listesi); o zamana kadar soru sıralamasında hile mümkündür.
+
 > **Saat dilimi notu:** Supabase sunucusu UTC çalışır. "Bugün" her yerde `(now() at time zone 'Europe/Istanbul')::date` ile hesaplanır.
 
 ---
@@ -402,6 +443,8 @@ export const hataBildir = (olay_id, not_metni) =>
 
 **Yerel veriler (localStorage):** Soru başına quiz cevapları ve seri, kelime oyunları, kategori tercihleri, tema, bildirim saati, kelime oyunu ayarları. Google ile giriş yapılırsa quiz cevapları ve kelime oyunları Firebase'deki hesapla eşitlenir (`docs/FIREBASE.md`).
 
+**Sıralama:** `src/lib/siralama.ts` oyuncu durumunu (girişsiz, ad yok, kayıtlı, kullanılamıyor) tutar ve sıralama RPC'lerini Firebase anahtarlı ayrı bir Supabase istemcisiyle çağırır. Süre göstergesi `src/components/SureSayaci.tsx`; ad formu `src/components/AdFormu.tsx` (doğrulama `src/lib/oyuncuAdi.ts`), giriş sonrası pencere `src/components/AdPenceresi.tsx`, ekran `src/views/SiralamaEkrani.tsx`. Sıralı oyunun kesin kaydı sunucudadır; sonuç cihazdaki kayda (`sirali`, `puan`, quiz için `dogrular`, `puanlar`) da yazılır ve hesapla eşitlenir.
+
 **Saatli sorular:** `gunuGetir` açılmış soruları `tt_quiz`'den, üç sorunun açılış saatlerini `tt_quiz_takvimi` RPC'sinden alır. RPC yoksa veya hata verirse açılmış sorulardan türetilir. `useAcilisYenile` (`src/lib/quizDepo.ts`) bir sonraki açılış saatinde ve uygulama öne geldiğinde veriyi yeniler.
 
 **Ses ve hareket:**
@@ -468,6 +511,9 @@ export const hataBildir = (olay_id, not_metni) =>
 | Video yayını plandan farklı olur (ertelenir, değişir) | Görev her gün önümüzdeki 7 günün planını yeniden okur, başlığı değişen slotun açılmamış sorusunu yeniler. Açılmış soru değiştirilmez. |
 | Video penceresinin başında yayınlanmaz | Soru pencerenin başında açılır. Gerekirse `acilis` o soru için elle ileri alınabilir. |
 | Hassas tarihî olaylar | Yazım kılavuzu: olgusal, tarafsız, grafik ayrıntısız |
+| Sıralamada hile: cevabı başka hesaptan, girişsiz oynayarak veya arkadaştan öğrenmek | Tamamen önlenemez. Süre ve puan sunucuda ölçülür; doğru cevap istemciye önceden gelmez (eski sürüm için `dogru_index` kapatılana kadar sorularda açık var). Şüpheli sonuçlar (hep 1. denemede, çok kısa sürede) incelenebilir. |
+| Sıralamada başkasına ait veya uygunsuz ad | Ad doğrulanmaz; kelime bakım görevi adları denetler, `red` adlar görünmez. Aynı ad iki kez alınamaz. |
+| Sıralama adı kişisel veridir | Katılım isteğe bağlı; pencere adın herkese görüneceğini söyler. Sıralamadan çıkma ve hesap silme adı ve puanları siler. Gizlilik politikasında yazar. |
 
 ---
 

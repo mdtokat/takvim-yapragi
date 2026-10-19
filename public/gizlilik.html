@@ -19,13 +19,14 @@
 <ul>
   <li><strong>Google ile giriş (isteğe bağlı):</strong> Google hesabınızla giriş yaparsanız, girişi Google Firebase Authentication yönetir. Firebase hesabınız için adınızı, e-posta adresinizi ve rastgele bir kullanıcı kimliğini saklar. Bu bilgiler yalnızca hesabınızı tanımak ve sonuçlarınızı hesabınıza bağlamak için kullanılır.</li>
   <li><strong>Oyun sonuçlarınız:</strong> Kelime oyunundaki tahminleriniz ve sonuçları ile günün sorularına verdiğiniz cevaplar cihazınızda saklanır. Giriş yaptıysanız, başka cihazlarda da görebilmeniz için hesabınıza bağlı olarak Google Firebase Cloud Firestore'a da kaydedilir. Bu kayıtları yalnızca siz okuyabilirsiniz.</li>
+  <li><strong>Sıralama (isteğe bağlı):</strong> Giriş yaptıktan sonra sıralamaya katılırsanız, yazdığınız Instagram kullanıcı adı veya Facebook'taki adınız günlük ve haftalık sıralamalarda herkese görünür. Bu adın size ait olduğu doğrulanmaz; başkasına ait veya uygunsuz adlar kaldırılır. Sıralamaya giren soru ve kelimelerde verdiğiniz cevaplar, tahminleriniz, başlama ve bitiş zamanları ile puanınız, hesabınızın kullanıcı kimliğiyle birlikte Supabase'de saklanır. E-posta adresiniz ve Google'daki adınız Supabase'e gönderilmez.</li>
   <li><strong>Tahminlerin değerlendirilmesi:</strong> Kelime oyununda yaptığınız tahminler, renklerin hesaplanması için kimliğiniz olmadan sunucuya gönderilir ve orada saklanmaz.</li>
   <li><strong>Kelime önerileri:</strong> "Kelimeyi öner" ile gönderdiğiniz kelime, sözlüğü geliştirmek için incelenir.</li>
   <li><strong>Hata bildirimleri:</strong> Bir kayıtta "Hata bildir" ile gönderdiğiniz kısa not, ilgili kaydın numarasıyla birlikte saklanır. Bu not sizinle veya cihazınızla ilişkilendirilmez ve yalnızca içeriği düzeltmek için kullanılır.</li>
   <li><strong>Cihazda saklananlar:</strong> Tema, bildirim saati, kategori tercihleri ve kelime oyunu ayarları yalnızca cihazınızda tutulur; sunucuya gönderilmez.</li>
 </ul>
 <h2>Hizmet sağlayıcılar</h2>
-<p>Uygulamanın içeriği (olaylar, sorular, kelimeler), kelime önerileri ve hata bildirimleri Supabase üzerinde saklanır. Giriş ve hesaba bağlı oyun sonuçları Google Firebase (Authentication ve Cloud Firestore) üzerinde saklanır. Web sürümü GitHub Pages üzerinde barındırılır. Bu hizmetler, isteklerin teknik olarak iletilmesi için IP adresi gibi standart bağlantı bilgilerini işleyebilir.</p>
+<p>Uygulamanın içeriği (olaylar, sorular, kelimeler), kelime önerileri, hata bildirimleri ve sıralama kayıtları Supabase üzerinde saklanır. Giriş ve hesaba bağlı oyun sonuçları Google Firebase (Authentication ve Cloud Firestore) üzerinde saklanır. Web sürümü GitHub Pages üzerinde barındırılır. Bu hizmetler, isteklerin teknik olarak iletilmesi için IP adresi gibi standart bağlantı bilgilerini işleyebilir.</p>
 <h2>Sosyal medya bağlantıları</h2>
 <p>"Videoyu izle" gibi bağlantılar Instagram, Facebook veya YouTube'u açar. Bu sitelerde işlenen veriler o hizmetlerin kendi gizlilik politikalarına tabidir. Uygulama bu hizmetlere sizin hakkınızda bilgi göndermez.</p>
 <h2>Bildirimler</h2>
@@ -33,7 +34,7 @@
 <h2>Reklam ve paylaşım</h2>
 <p>Uygulamada reklam yoktur. Veriler üçüncü taraflara satılmaz veya reklam amacıyla paylaşılmaz.</p>
 <h2>Verilerin silinmesi</h2>
-<p>Giriş yaptıysanız, Ayarlar &gt; Hesap &gt; "Hesabımı sil" ile hesabınızı ve hesabınıza kayıtlı bütün sonuçları kalıcı olarak silebilirsiniz. Çıkış yaptığınızda cihazdaki sonuçlar silinir, hesabınızdaki kayıtlar kalır. Giriş yapmadıysanız, uygulamanın verilerini temizlediğinizde veya uygulamayı kaldırdığınızda cihazdaki sonuçlar silinir.</p>
+<p>Giriş yaptıysanız, Ayarlar &gt; Hesap &gt; "Hesabımı sil" ile hesabınızı, hesabınıza kayıtlı bütün sonuçları ve sıralamadaki adınızla puanlarınızı kalıcı olarak silebilirsiniz. Yalnızca sıralamadan çıkmak için Ayarlar &gt; Sıralama &gt; "Sıralamadan çık" seçeneği adınızı ve puanlarınızı siler. Çıkış yaptığınızda cihazdaki sonuçlar silinir, hesabınızdaki kayıtlar kalır. Giriş yapmadıysanız, uygulamanın verilerini temizlediğinizde veya uygulamayı kaldırdığınızda cihazdaki sonuçlar silinir.</p>
 <h2>Yapay zekâ ile hazırlanan içerik</h2>
 <p>İçerik, günlük kelimeler ve sorular yapay zekâ yardımıyla hazırlanır ve kaynaklarla doğrulanır. Hata görürseniz uygulama içinden bildirebilirsiniz.</p>
 <h2>Çocuklar</h2>

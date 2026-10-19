@@ -88,7 +88,7 @@ Uygulama web'de (GitHub Pages) ve Android'de (Capacitor ile Google Play) yayınl
 | MVP | "Bu kelime geçerli olmalı" önerisi |
 | MVP | Zor mod, renk körü modu (turuncu/mavi), açık/koyu tema |
 | MVP | Günlük yerel hatırlatma bildirimi |
-| **Faz 2** | Takma ad ve haftalık liderlik tablosu (Claude takma ad moderasyonu yapar) |
+| **Faz 2** | Günlük ve haftalık sıralama, 90 saniyelik süreli oyun (yapıldı; Bölüm 13.1) |
 | Faz 2 | **Bağlantılar** modu: 16 kelime, 4 gizli grup (Claude günlük üretir) |
 | Faz 2 | Geçmiş bulmacalar arşivi (kaçırılan günleri oynama, seriye sayılmaz) |
 | **Faz 3** | **Kelime Merdiveni** modu (TAŞ → ... → KUŞ, her adımda bir harf değişir) |
@@ -427,6 +427,28 @@ Göç: `supabase/migrations/20261019150000_mindmash_durumsuz_kelime.sql`.
 - Hiçbir şey kaydetmez. 6 hak sınırı istemcide uygulanır; kötü niyetli biri istediği kadar deneyebilir (anonim hesaplarla bu zaten mümkündü).
 - `kb_kelime_onerileri` için `anon` ekleme politikası eklendi (`kullanici_id` boş).
 
+### 9.6 Sıralı kelime (90 saniye)
+
+Göç: `supabase/migrations/20261019180000_mindmash_siralama.sql` (tam tablo ve fonksiyon listesi `docs/TASARIM.md` Bölüm 7.2).
+
+```sql
+create table kb_puanlar (
+  uid        text not null references tt_oyuncular(uid) on delete cascade,  -- Firebase kullanıcı kimliği
+  tarih      date not null,
+  slot       text not null check (slot in ('sabah','oglen','aksam')),
+  baslangic  timestamptz not null default now(),
+  bitis      timestamptz,
+  tahminler  text[] not null default '{}',
+  durum      text not null default 'devam' check (durum in ('devam','kazandi','kaybetti')),
+  puan       smallint not null default 0,
+  primary key (uid, tarih, slot)
+);
+```
+
+- `kb_sirali_durum(p_tarih, p_slot, p_baslat)`: oyunu döndürür (tahminler, renkler, kalan süre, puan; bittiyse cevap, anlam, örnek). `p_baslat` ile yalnızca bugünün açılmış kelimesi başlatılır. 92 saniyeyi geçmiş oyun `kaybetti` olur.
+- `kb_sirali_tahmin(p_tarih, p_slot, p_tahmin)`: süre içindeyse tahmini ekler. Renkler `kb_renkler(tahmin, cevap)` ile hesaplanır (`kb_degerlendir` ile aynı kural). Doğru tahminde puan yazılır.
+- Kullanıcı Firebase oturum anahtarından tanınır (`tt_firebase_uid()`); anahtar yoksa `giris_gerekli`.
+
 ---
 
 ## 10. Claude zamanlanmış görevi — Günlük bakım (her gün 09:51)
@@ -516,18 +538,14 @@ export const kelimeOner   = (kelime) => supabase.from('kb_kelime_onerileri').ins
 
 ## 13. Faz 2 ayrıntıları
 
-### 13.1 Takma ad ve haftalık liderlik
+### 13.1 Sıralama (yapıldı)
 
-```sql
-create table kb_oyuncular (
-  kullanici_id  uuid primary key default auth.uid(),
-  takma_ad      text not null unique check (takma_ad ~ '^[A-Za-zÇĞİÖŞÜçğıöşü0-9_]{3,16}$'),
-  durum         text not null default 'beklemede' check (durum in ('beklemede','onayli','red'))
-);
-```
-- **Puan:** 1. denemede 6 puan … 6. denemede 1 puan, bulamazsa 0.
-- Haftalık toplam bir `security definer` fonksiyonla hesaplanır. Yalnızca `onayli` takma adlar listelenir.
-- Günlük görevin başına moderasyon adımı eklenir: Hakaret, küfür, kişisel bilgi, marka veya taklit içeren takma adlar `red` olur. Kullanıcı yeni ad seçmeye yönlendirilir.
+Takma ad yerine Instagram kullanıcı adı veya Facebook'taki ad kullanılır ve sıralama günlük ve haftalıktır; kelime ve sorular ayrı listelenir. Ayrıntılar `docs/TASARIM.md` Bölüm 5.7 ve 7.2.
+
+- Sıralamaya katılan oyuncu bugünün kelimelerini 90 saniyede oynar. Süre "Başla"ya basınca `kb_sirali_durum` ile sunucuda başlar; tahminler durumlu `kb_sirali_tahmin` fonksiyonunda değerlendirilir ve `kb_puanlar` tablosunda tutulur (durumsuz `kb_degerlendir` sıralama dışında kullanılmaya devam eder).
+- **Puan:** 1. denemede 100, sonra 80, 60, 40, 25, 10; bulunamazsa veya süre dolarsa 0. Bulunursa kalan sürenin her 3 saniyesi için 1 puan eklenir (en çok 30).
+- Cihazda süresiz oynanmaya başlanmış kelime sıralamaya girmez. Geçmiş günler puan getirmez.
+- Adlar kelime bakım görevinde denetlenir (`docs/gorevler/kelime-bakim.md` ADIM 4).
 
 ### 13.2 Bağlantılar modu
 - **Tablo:** `kb_baglantilar (tarih pk, gruplar jsonb)`

@@ -4,7 +4,8 @@ import { tarihCoz } from './tarih'
 import type { GunVerisi, GununBilgisi, Olay, QuizPlani } from './tipler'
 
 const OLAY_ALANLARI = 'id, ay, gun, yil, tur, baslik, aciklama, kategori, kaynak_url'
-const QUIZ_ALANLARI = 'id, tarih, sira, soru, secenekler, dogru_index, aciklama, slot, acilis, video_baslik, video_url, kaynak_url'
+// Doğru cevap (dogru_index) okunmaz; cevaplanınca sunucudan gelir (src/lib/siralama.ts → quizCevapla).
+const QUIZ_ALANLARI = 'id, tarih, sira, soru, secenekler, aciklama, slot, acilis, video_baslik, video_url, kaynak_url'
 
 export interface GunSonucu {
   veri: GunVerisi

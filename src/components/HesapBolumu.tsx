@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { HesapHatasi, cikisYap, googleIleGiris, hesabiSil, useHesap } from '../lib/hesap'
 import { yerelUygulama } from '../lib/platform'
+import { siralamaKaydiniSil } from '../lib/siralama'
 
 const HATA_METNI: Record<HesapHatasi['kod'], string> = {
   android: 'Android uygulamasında Google ile giriş yakında gelecek. Şimdilik web sitesinden giriş yapabilirsin.',
@@ -44,12 +45,17 @@ export function HesapBolumu() {
           <p className="aciklama">Kelime ve quiz sonuçların hesabına kaydediliyor; başka bir cihazda giriş yapınca orada da görünür.</p>
           {silmeOnayi ? (
             <div className="hesap-onay">
-              <p>Hesabın ve hesaba kayıtlı bütün sonuçların silinecek. Bu işlem geri alınamaz.</p>
+              <p>Hesabın, hesaba kayıtlı bütün sonuçların ve sıralamadaki adın ile puanların silinecek. Bu işlem geri alınamaz.</p>
               <div className="dugme-grubu">
                 <button
                   className="dugme"
                   disabled={mesgul}
-                  onClick={() => void calistir(hesabiSil, 'Hesap silinemedi. Bağlantını kontrol edip yeniden dene.').then(() => setSilmeOnayi(false))}
+                  onClick={() =>
+                    void calistir(async () => {
+                      await siralamaKaydiniSil()
+                      await hesabiSil()
+                    }, 'Hesap silinemedi. Bağlantını kontrol edip yeniden dene.').then(() => setSilmeOnayi(false))
+                  }
                 >
                   Evet, hesabımı sil
                 </button>

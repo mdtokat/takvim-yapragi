@@ -4,6 +4,7 @@ import { bildirimleriPlanla, izinIste } from '../lib/bildirim'
 import { linkAc, yerelUygulama } from '../lib/platform'
 import { KategoriSecici } from '../components/KategoriSecici'
 import { HesapBolumu } from '../components/HesapBolumu'
+import { SiralamaBolumu } from '../components/SiralamaBolumu'
 import { SITE_URL, SOSYAL_HESAPLAR, SURUM, UYGULAMA_ADI } from '../lib/sabitler'
 import { sesCal } from '../lib/ses'
 
@@ -36,6 +37,7 @@ export function AyarlarEkrani() {
       <h1>Ayarlar</h1>
 
       <HesapBolumu />
+      <SiralamaBolumu />
 
       <section className="ayar-bolum">
         <h2>Görünüm ve ses</h2>

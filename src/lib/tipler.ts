@@ -47,7 +47,8 @@ export interface QuizSorusu {
   sira: number
   soru: string
   secenekler: string[]
-  dogru_index: number
+  // Doğru cevap istemciye gelmez; cevaplanınca sunucudan alınır (tt_quiz_cevapla). Eski önbellekte dolu olabilir.
+  dogru_index?: number
   aciklama: string | null
   // Videodan gelen sorularda dolu; eski (tarihte bugün) sorularda boş.
   slot: Slot | null

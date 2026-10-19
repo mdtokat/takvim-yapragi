@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { gunuGetir, onbellektekiGun } from '../lib/api'
-import { AYLAR, bugun, saatMetni, tarihCoz } from '../lib/tarih'
+import { AYLAR, bugun, saatMetni, tarihCoz, trBugun } from '../lib/tarih'
 import {
+  SURE_DOLDU,
   cevabi,
   cevapSayisi,
+  dogruCevabi,
+  gunPuani,
   quizKaydet,
   quizKaydi,
   quizTamam,
@@ -13,17 +16,31 @@ import {
   type QuizKaydi,
   type SoruDurumu,
 } from '../lib/quizDepo'
+import {
+  QUIZ_SURESI,
+  SiralamaHatasi,
+  oyuncuBekleniyor,
+  oyuncuyuYenile,
+  quizCevapla,
+  quizDurumuGetir,
+  useOyuncu,
+  type QuizSonucu,
+} from '../lib/siralama'
 import { linkAc, paylas } from '../lib/platform'
 import { SLOT_ADI, UYGULAMA_ADI, VIDEO_VARSAYILAN_URL } from '../lib/sabitler'
 import type { GunVerisi, QuizSorusu } from '../lib/tipler'
 import { GeriDugmesi } from '../components/GeriDugmesi'
 import { Konfeti } from '../components/Konfeti'
+import { SureSayaci } from '../components/SureSayaci'
 import { sesCal } from '../lib/ses'
 import { useDepoSurumu } from '../lib/senkron'
 
 const HARF = ['A', 'B', 'C', 'D']
 
 const videoAdi = (d: { slot: SoruDurumu['slot'] }) => (d.slot ? `${SLOT_ADI[d.slot].toLocaleLowerCase('tr-TR')} videosu` : '')
+
+/** Sıralamaya giren sorunun durumu: kapali (süresiz oynanır), bekliyor (Başla'ya basılmadı), suruyor (süre işliyor). */
+type SiraliDurum = { tur: 'yukleniyor' } | { tur: 'kapali' } | { tur: 'bekliyor' } | { tur: 'suruyor'; bitis: number } | { tur: 'hata' }
 
 function SoruBaglantilari({ soru }: { soru: QuizSorusu }) {
   if (!soru.slot && !soru.kaynak_url) return null
@@ -43,16 +60,19 @@ function SoruBaglantilari({ soru }: { soru: QuizSorusu }) {
   )
 }
 
-function OzetSatiri({ soru, secim }: { soru: QuizSorusu; secim: number }) {
-  const dogru = secim === soru.dogru_index
+function OzetSatiri({ soru, secim, dogruIndex, puan }: { soru: QuizSorusu; secim: number; dogruIndex: number | null; puan: number | null }) {
+  const dogru = secim === dogruIndex
   return (
     <li className={dogru ? 'dogru' : 'yanlis'}>
       {soru.slot && <p className="quiz-video-etiket">{SLOT_ADI[soru.slot]} videosu{soru.video_baslik ? ` · ${soru.video_baslik}` : ''}</p>}
       <p className="quiz-ozet-soru">{soru.soru}</p>
-      <p>
-        {dogru ? 'Doğru: ' : `Senin cevabın: ${soru.secenekler[secim]}. Doğrusu: `}
-        <strong>{soru.secenekler[soru.dogru_index]}</strong>
-      </p>
+      {dogruIndex !== null && (
+        <p>
+          {dogru ? 'Doğru: ' : secim === SURE_DOLDU ? 'Süre doldu. Doğrusu: ' : `Senin cevabın: ${soru.secenekler[secim]}. Doğrusu: `}
+          <strong>{soru.secenekler[dogruIndex]}</strong>
+          {puan !== null && <span className="quiz-puan"> · {puan} puan</span>}
+        </p>
+      )}
       {soru.aciklama && <p className="quiz-aciklama">{soru.aciklama}</p>}
       <SoruBaglantilari soru={soru} />
     </li>
@@ -72,6 +92,13 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
   const [gosterilen, setGosterilen] = useState<number | null>(null)
   const [paylasimNotu, setPaylasimNotu] = useState('')
   const [yeniBitti, setYeniBitti] = useState(false)
+  const [gonderiliyor, setGonderiliyor] = useState(false)
+  const [cevapHatasi, setCevapHatasi] = useState('')
+  // Sıralama: girişli ve adı kayıtlı oyuncu bugünün sorularını 30 saniyede cevaplar.
+  const oyuncu = useOyuncu()
+  const siraliGun = oyuncu.durum === 'kayitli' && tarih === trBugun()
+  const [sirali, setSirali] = useState<Record<number, SiraliDurum>>({})
+  useEffect(() => setSirali({}), [tarih, oyuncu.durum])
 
   useEffect(() => {
     gunuGetir(tarih)
@@ -84,6 +111,69 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
 
   const durumlar = useMemo(() => soruDurumlari(veri), [veri])
   useAcilisYenile(durumlar, () => setDeneme((n) => n + 1))
+
+  /** Sunucunun döndüğü sonucu cihazdaki kayda yazar (hesapla eşitlenir). */
+  const kaydet = (sira: number, r: QuizSonucu) => {
+    const k = quizKaydi(tarih)
+    const cevaplar = [0, 1, 2].map((j) => k?.cevaplar[j] ?? null)
+    const dogrular = [0, 1, 2].map((j) => k?.dogrular?.[j] ?? null)
+    const puanlar = [0, 1, 2].map((j) => k?.puanlar?.[j] ?? null)
+    cevaplar[sira - 1] = r.secim ?? SURE_DOLDU
+    dogrular[sira - 1] = r.dogruIndex
+    puanlar[sira - 1] = r.puan
+    const dogru = cevaplar.filter((c, j) => c !== null && c === dogrular[j]).length
+    const yeni: QuizKaydi = { cevaplar, dogrular, puanlar, dogru, cozulme: bugun() }
+    quizKaydet(tarih, yeni)
+    setKayit(yeni)
+    return yeni
+  }
+
+  const cevaplanmamis = durumlar.filter((x) => x.soru && cevabi(kayit, x) === null)
+  const aktif = durumlar.find((x) => x.sira === gosterilen) ?? cevaplanmamis[0] ?? null
+  const aktifSira = aktif && aktif.soru && cevabi(kayit, aktif) === null ? aktif.sira : null
+
+  // Sıralamaya giren sorunun sunucudaki durumu: başlamış mı, süresi ne kadar kaldı, cevaplanmış mı.
+  useEffect(() => {
+    if (aktifSira === null || !siraliGun || sirali[aktifSira]) return
+    const sira = aktifSira
+    setSirali((s) => ({ ...s, [sira]: { tur: 'yukleniyor' } }))
+    quizDurumuGetir(tarih, sira, false)
+      .then((q) => {
+        if (q.basladi && q.sonuc) {
+          kaydet(sira, q.sonuc)
+          setGosterilen(sira)
+          setSirali((s) => ({ ...s, [sira]: { tur: 'kapali' } }))
+        } else
+          setSirali((s) => ({ ...s, [sira]: q.basladi ? { tur: 'suruyor', bitis: Date.now() + q.kalanMs } : { tur: 'bekliyor' } }))
+      })
+      .catch((e) => {
+        if (e instanceof SiralamaHatasi && e.kod === 'oyuncu_yok') oyuncuyuYenile()
+        // Sunucu bu soruyu sıralamaya almıyorsa (ör. cihazın tarihi farklı) soru süresiz oynanır.
+        setSirali((s) => ({ ...s, [sira]: e instanceof SiralamaHatasi && e.kod !== 'baglanti' ? { tur: 'kapali' } : { tur: 'hata' } }))
+      })
+  }, [aktifSira, siraliGun, tarih, sirali])
+
+  // Eski kayıtlarda doğru cevap yoktur; cevaplanmış sorunun doğrusu sunucudan bir kez alınır.
+  const tamamlaniyor = useRef(false)
+  useEffect(() => {
+    const eksik = durumlar.filter((x) => x.soru && cevabi(kayit, x) !== null && cevabi(kayit, x)! >= 0 && dogruCevabi(kayit, x) === null)
+    if (!eksik.length || tamamlaniyor.current) return
+    tamamlaniyor.current = true
+    void Promise.all(eksik.map((x) => quizCevapla(tarih, x.sira, cevabi(kayit, x)).then((r) => ({ sira: x.sira, r }))))
+      .then((l) => {
+        const k = quizKaydi(tarih)
+        if (!k) return
+        const dogrular = [0, 1, 2].map((j) => k.dogrular?.[j] ?? null)
+        for (const { sira, r } of l) dogrular[sira - 1] = r.dogruIndex
+        const yeni = { ...k, dogrular, dogru: k.cevaplar.filter((c, j) => c !== null && c === dogrular[j]).length }
+        quizKaydet(tarih, yeni)
+        setKayit(yeni)
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        tamamlaniyor.current = false
+      })
+  }, [durumlar, kayit, tarih])
 
   const baslik = d ? `${d.getDate()} ${AYLAR[d.getMonth()]} soruları` : 'Günün soruları'
   const donusYolu = tarih === bugun() ? '#/' : `#/gun/${tarih}`
@@ -113,8 +203,6 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
     )
   }
 
-  const cevaplanmamis = durumlar.filter((x) => x.soru && cevabi(kayit, x) === null)
-  const aktif = durumlar.find((x) => x.sira === gosterilen) ?? cevaplanmamis[0] ?? null
   const siradaki = durumlar.find((x) => !x.soru) ?? null
 
   const ilerleme = (
@@ -122,7 +210,7 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
       {durumlar.map((x) => {
         const c = cevabi(kayit, x)
         let sinif = 'nokta'
-        if (c !== null && x.soru) sinif += c === x.soru.dogru_index ? ' dogru' : ' yanlis'
+        if (c !== null && x.soru) sinif += c === dogruCevabi(kayit, x) ? ' dogru' : ' yanlis'
         else if (x.sira === aktif?.sira) sinif += ' simdiki'
         else if (!x.soru) sinif += ' kilitli'
         return <span key={x.sira} className={sinif} />
@@ -131,13 +219,30 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
   )
 
   const cevaplananlar = durumlar.filter((x) => x.soru && cevabi(kayit, x) !== null)
+  const puan = gunPuani(kayit)
+  const ozetListesi = (k: QuizKaydi | null) => (
+    <ol className="quiz-ozet">
+      {cevaplananlar.map((x) => (
+        <OzetSatiri key={x.sira} soru={x.soru!} secim={cevabi(k, x)!} dogruIndex={dogruCevabi(k, x)} puan={k?.puanlar?.[x.sira - 1] ?? null} />
+      ))}
+    </ol>
+  )
+  const siralamaSatiri =
+    tarih === trBugun() && (puan !== null || oyuncu.durum === 'kayitli') ? (
+      <p className="quiz-siralama">
+        {puan !== null && <span>Bugünkü puanın: {puan}</span>}
+        <a className="metin-dugme" href="#/siralama/quiz">
+          Sıralamayı gör
+        </a>
+      </p>
+    ) : null
 
   // Tamamlanmış quiz: özet
   if (quizTamam(kayit) && gosterilen === null) {
     const k = kayit!
     const dogruSayi = k.dogru
-    const isaretler = durumlar.map((x) => (x.soru && cevabi(k, x) === x.soru.dogru_index ? '✅' : '❌')).join('')
-    const paylasimMetni = `${UYGULAMA_ADI}, ${baslik.replace(' soruları', '')}: ${dogruSayi}/3 ${isaretler}`
+    const isaretler = durumlar.map((x) => (x.soru && cevabi(k, x) === dogruCevabi(k, x) ? '✅' : '❌')).join('')
+    const paylasimMetni = `${UYGULAMA_ADI}, ${baslik.replace(' soruları', '')}: ${dogruSayi}/3 ${isaretler}${puan !== null ? ` · ${puan} puan` : ''}`
     return (
       <div className="sayfa quiz">
         {yeniBitti && dogruSayi === 3 && <Konfeti />}
@@ -147,11 +252,8 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
           <span className={`quiz-skor-sayi${yeniBitti ? ' quiz-skor-yeni' : ''}`}>{dogruSayi}/3</span>
           {tarih === bugun() && seri() > 0 && <span className="seri">{seri()} günlük seri</span>}
         </p>
-        <ol className="quiz-ozet">
-          {cevaplananlar.map((x) => (
-            <OzetSatiri key={x.sira} soru={x.soru!} secim={cevabi(k, x)!} />
-          ))}
-        </ol>
+        {siralamaSatiri}
+        {ozetListesi(k)}
         <div className="dugme-grubu">
           <button
             className="dugme"
@@ -195,13 +297,8 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
             <p>Sıradaki soru henüz hazır değil. Biraz sonra yeniden bak.</p>
           )}
         </div>
-        {cevaplananlar.length > 0 && (
-          <ol className="quiz-ozet">
-            {cevaplananlar.map((x) => (
-              <OzetSatiri key={x.sira} soru={x.soru!} secim={cevabi(kayit, x)!} />
-            ))}
-          </ol>
-        )}
+        {siralamaSatiri}
+        {cevaplananlar.length > 0 && ozetListesi(kayit)}
         <div className="dugme-grubu">
           <a className="dugme dugme-ikincil" href={donusYolu}>
             Yaprağa dön
@@ -214,17 +311,52 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
   const soru = aktif.soru
   const secilen = cevabi(kayit, aktif)
   const cevaplandi = secilen !== null
+  const dogruIndex = dogruCevabi(kayit, aktif)
+  const siraliDurum: SiraliDurum = cevaplandi
+    ? { tur: 'kapali' }
+    : siraliGun
+      ? (sirali[aktif.sira] ?? { tur: 'yukleniyor' })
+      : tarih === trBugun() && oyuncuBekleniyor(oyuncu)
+        ? { tur: 'yukleniyor' }
+        : { tur: 'kapali' }
 
-  const sec = (i: number) => {
-    if (cevaplandi) return
-    const cevaplar = [0, 1, 2].map((j) => kayit?.cevaplar[j] ?? null)
-    cevaplar[aktif.sira - 1] = i
-    const dogru = durumlar.filter((x) => x.soru && cevaplar[x.sira - 1] === x.soru.dogru_index).length
-    const yeni: QuizKaydi = { cevaplar, dogru, cozulme: bugun() }
-    quizKaydet(tarih, yeni)
-    setKayit(yeni)
-    setGosterilen(aktif.sira)
-    sesCal(i === soru.dogru_index ? 'dogru' : 'yanlis')
+  /** i null: süre doldu. Cevap sunucuda değerlendirilir; doğru cevap ancak o zaman gelir. */
+  const sec = async (i: number | null) => {
+    if (cevaplandi || gonderiliyor) return
+    const sira = aktif.sira
+    setGonderiliyor(true)
+    setCevapHatasi('')
+    try {
+      const r = await quizCevapla(tarih, sira, i)
+      kaydet(sira, r)
+      setGosterilen(sira)
+      sesCal(r.dogru ? 'dogru' : 'yanlis')
+    } catch {
+      setCevapHatasi('Cevap gönderilemedi. Bağlantını kontrol edip yeniden dene.')
+    } finally {
+      setGonderiliyor(false)
+    }
+  }
+
+  const sureyiBaslat = async () => {
+    const sira = aktif.sira
+    setGonderiliyor(true)
+    setCevapHatasi('')
+    try {
+      const q = await quizDurumuGetir(tarih, sira, true)
+      if (q.basladi && q.sonuc) {
+        kaydet(sira, q.sonuc)
+        setGosterilen(sira)
+      } else if (q.basladi) {
+        sesCal('tik')
+        setSirali((s) => ({ ...s, [sira]: { tur: 'suruyor', bitis: Date.now() + q.kalanMs } }))
+      }
+    } catch (e) {
+      if (e instanceof SiralamaHatasi && e.kod !== 'baglanti') setSirali((s) => ({ ...s, [sira]: { tur: 'kapali' } }))
+      else setCevapHatasi('Süre başlatılamadı. Bağlantını kontrol edip yeniden dene.')
+    } finally {
+      setGonderiliyor(false)
+    }
   }
 
   const kalanAcik = cevaplanmamis.filter((x) => x.sira !== aktif.sira).length
@@ -237,15 +369,62 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
     } else sesCal('tik')
   }
 
+  const videoEtiketi = soru.slot && (
+    <p className="quiz-video-etiket">
+      {SLOT_ADI[soru.slot]} videosundan{soru.video_baslik ? ` · ${soru.video_baslik}` : ''}
+    </p>
+  )
+
+  // Sıralamaya giren soru: metin, Başla'ya basılana kadar gösterilmez.
+  if (siraliDurum.tur === 'yukleniyor' || siraliDurum.tur === 'bekliyor' || siraliDurum.tur === 'hata') {
+    return (
+      <div className="sayfa quiz">
+        <GeriDugmesi />
+        <h1>{baslik}</h1>
+        {ilerleme}
+        {videoEtiketi}
+        <div className="sure-baslat">
+          {siraliDurum.tur === 'yukleniyor' ? (
+            <div className="iskelet iskelet-buyuk" />
+          ) : siraliDurum.tur === 'hata' ? (
+            <>
+              <p>Sıralamaya bağlanılamadı. Bağlantını kontrol edip yeniden dene.</p>
+              <button
+                className="dugme"
+                onClick={() =>
+                  setSirali((s) => {
+                    const { [aktif.sira]: _, ...kalan } = s
+                    return kalan
+                  })
+                }
+              >
+                Yeniden dene
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="sure-baslat-baslik">Bu soru sıralamaya giriyor</p>
+              <p>30 saniyen var. Doğru cevap 50 puan, kalan her saniye 1 puan daha getirir.</p>
+              <p className="aciklama kucuk">Süre Başla'ya basınca başlar; uygulamadan çıksan da durmaz.</p>
+              <button className="dugme" onClick={() => void sureyiBaslat()} disabled={gonderiliyor}>
+                {gonderiliyor ? 'Başlıyor…' : 'Başla'}
+              </button>
+            </>
+          )}
+        </div>
+        {cevapHatasi && <p className="uyari">{cevapHatasi}</p>}
+      </div>
+    )
+  }
+
   return (
     <div className="sayfa quiz">
       <GeriDugmesi />
       <h1>{baslik}</h1>
       {ilerleme}
-      {soru.slot && (
-        <p className="quiz-video-etiket">
-          {SLOT_ADI[soru.slot]} videosundan{soru.video_baslik ? ` · ${soru.video_baslik}` : ''}
-        </p>
+      {videoEtiketi}
+      {siraliDurum.tur === 'suruyor' && !cevaplandi && (
+        <SureSayaci bitis={siraliDurum.bitis} toplam={QUIZ_SURESI} onBitti={() => void sec(null)} />
       )}
       <h2 key={aktif.sira} className="quiz-soru">
         {soru.soru}
@@ -253,19 +432,28 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
       <div className="quiz-secenekler">
         {soru.secenekler.map((s, i) => {
           let sinif = 'secenek'
-          if (cevaplandi && i === soru.dogru_index) sinif += ' dogru'
+          if (cevaplandi && i === dogruIndex) sinif += ' dogru'
           else if (cevaplandi && i === secilen) sinif += ' yanlis'
           return (
-            <button key={i} className={sinif} onClick={() => sec(i)} disabled={cevaplandi && i !== secilen && i !== soru.dogru_index}>
+            <button
+              key={i}
+              className={sinif}
+              onClick={() => void sec(i)}
+              disabled={gonderiliyor || (cevaplandi && i !== secilen && i !== dogruIndex)}
+            >
               <span className="secenek-harf">{HARF[i]}</span>
               {s}
             </button>
           )
         })}
       </div>
+      {cevapHatasi && <p className="uyari">{cevapHatasi}</p>}
       {cevaplandi && (
         <div className="quiz-geri-bildirim" role="status">
-          <p className="quiz-sonuc-metni">{secilen === soru.dogru_index ? 'Doğru.' : 'Yanlış.'}</p>
+          <p className="quiz-sonuc-metni">
+            {secilen === SURE_DOLDU ? 'Süre doldu.' : secilen === dogruIndex ? 'Doğru.' : 'Yanlış.'}
+            {typeof kayit?.puanlar?.[aktif.sira - 1] === 'number' && <span className="quiz-puan"> +{kayit.puanlar[aktif.sira - 1]} puan</span>}
+          </p>
           {soru.aciklama && <p className="quiz-aciklama">{soru.aciklama}</p>}
           <SoruBaglantilari soru={soru} />
           <button className="dugme" onClick={ilerle}>
