@@ -38,6 +38,19 @@ GÜNÜN DÜZENİ
   söylenen bilgiden yazılır: sabah sorusu sabah videosundan, öğlen sorusu öğlen videosundan,
   akşam sorusu akşam videosundan. Bir videonun sorusunu başka bir videodan yazma.
 - Günün kelimeleri ayrı bir görevin işidir; sen kb_ tablolarına dokunmazsın.
+İÇERİK POLİTİKASI (uygulama sahibinin kararı; diğer kuralların önündedir)
+- İsrail devletini, hükümetini, ordusunu, kurumlarını veya Siyonizmi öven, tanıtan ya da
+  olumlu reklamını yapan hiçbir içerik yazma. İsrail'i öne çıkaran bir olay, bilgi veya başarı
+  (kuruluşu, teknolojisi, ordusu, şirketleri, sporu) seçme; başka bir konu seç.
+- Yahudiliği bir din olarak tanıtan, öven veya reklamını yapan içerik yazma.
+- Kişilerin etnik kökenini veya dinini konuyla doğrudan ilgili değilse yazma. Hiçbir halkı
+  veya dini aşağılayan, nefret içeren içerik yazma.
+- İslamiyet, Müslümanlar ve Türkiye hakkında olumlu içerik yazılabilir ve tercih edilebilir:
+  İslam medeniyetinin bilime, mimariye ve sanata katkıları; Müslüman ve Türk bilim insanları,
+  mimarlar, sanatçılar, sporcular; Türkiye'nin başarıları. Bu konularda ton sıcak ve takdir
+  edici olabilir; doğrulama kuralları aynen geçerlidir (abartı ve uydurma yok).
+- Video planındaki bir slot bu politikaya aykırıysa o videodan soru yazma; o sıraya ADIM 2.4'teki
+  yedek yöntemle soru yaz ve kayıt özetine "politika nedeniyle atlandı" yaz.
 GENEL KURALLAR
 - Bugünün tarihi: select (now() at time zone 'Europe/Istanbul')::date;
 - SQL'de tüm metinleri dolar tırnağıyla yaz ($t$metin$t$). Türkçe kesme işaretleri
@@ -51,7 +64,8 @@ GENEL KURALLAR
   curl -sSL "https://en.wikipedia.org/w/index.php?title=<Sayfa_Adı>&action=raw"
 - kaynak_url, bilgiyi gerçekten doğruladığın sayfa olmalı (https ile başlamalı).
 - Metinleri kendi cümlelerinle yaz; kaynaktan cümle kopyalama.
-- Dil: sade, akıcı Türkçe. Yorum ve siyasi değerlendirme yok; olgu anlat.
+- Dil: sade, akıcı Türkçe. Yorum ve siyasi değerlendirme yok; olgu anlat (İÇERİK POLİTİKASI'ndaki
+  olumlu ton bunun istisnasıdır).
 - Yazım kılavuzu: Ton merak uyandıran, sade, ansiklopedik ama kuru değil; "Biliyor muydunuz?" klişesi yok.
   Olay açıklaması 2–4 cümle, günün bilgisi 2–3 cümle, quiz açıklaması 1 cümle.
   Savaş, katliam ve terör olayları olgusal ve saygılı dille, grafik ayrıntısız yazılır; güncel siyasi
@@ -82,7 +96,8 @@ ADIM 1 — Günün bilgisi tamponu
 2. Eksik tarihlerden en fazla 5 tanesi için birer bilgi yaz:
    - baslik ≤ 80 karakter, metin 80–500 karakter, şaşırtıcı ama doğru bir bilgi.
    - Kategorileri dönüşümlü kullan; "muhendislik", "bilim" ve "teknoloji" toplamda
-     yarıdan fazla olsun.
+     yarıdan fazla olsun. İslam medeniyetinin ve Türkiye'nin bilim, mühendislik ve sanat
+     başarıları bu kategorilerde tercih edilebilir.
    - Tekrarı önle: select baslik from tt_gunun_bilgisi
      where tarih > current_date - 120; listesindeki konulara benzeyen bilgi yazma.
    - Metindeki her sayıyı ve iddiayı kaynak sayfada gör; görmediğin ayrıntıyı yazma.
@@ -136,7 +151,9 @@ ADIM 2 — Günün soruları (her videoya bir soru, 7 günlük tampon)
    slot null, video_baslik null. acilis yine o sıranın video saatidir (1 → 08:00, 2 → 12:00,
    3 → 19:00); böylece yedek soru da video saatinde açılır.
    Yedek soru, plan sonradan gelirse açılış saatinden önce 3. adımdaki yazımla videodan
-   soruya çevrilir. Var olan videolu satırların üzerine yedek soru yazma.
+   soruya çevrilir. Var olan videolu satırların üzerine yedek soru yazma; tek istisna, henüz
+   açılmamış (acilis > now()) ve İÇERİK POLİTİKASI'na aykırı videolu sorudur: onu 3. adımdaki
+   yazımla yedek soruya çevir.
    O gün için yeterli olay yoksa önce ADIM 3'ün kurallarıyla o günü doldur.
 5. Kontrol: işlediğin her tarih için şu sorgu 3 satır, sırayla 08:00, 12:00, 19:00 döndürmeli:
    select sira, slot, to_char(acilis at time zone 'Europe/Istanbul', 'HH24:MI')
@@ -161,7 +178,9 @@ ADIM 3 — Arşiv doldurma
 2. Her ay-gün için mevcut kayıtları oku (tekrar eklememek için; durum='kaldirildi' olanlar dahil),
    sonra toplam 12 kayda ulaşacak kadar yeni kayıt ekle:
    - Dağılım hedefi: ~7 olay, ~3 doğum, ~2 ölüm.
-   - En az 3 kayıt "bilim/teknoloji/muhendislik", en az 2 kayıt "turkiye" olsun.
+   - En az 3 kayıt "bilim/teknoloji/muhendislik", en az 2 kayıt "turkiye" olsun. O gün için
+     doğrulanabilir bir kayıt varsa birini İslam medeniyetinden veya bir Müslüman bilim insanı,
+     mimar ya da sanatçıdan seç.
    - Farklı yüzyıllardan seç; yalnızca 20. yüzyıla yığılma.
    - guven: Birden fazla güvenilir kaynak veya resmî/akademik kaynak = 3,
      tek güvenilir kaynak = 2. Kaynaklar tarihte çelişiyorsa guven=1 ve
