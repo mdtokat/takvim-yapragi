@@ -15,7 +15,7 @@ Firebase'de Cloud Functions yoktur, ücretsiz (Spark) plan yeter. Supabase, sır
 - Kelime oyunu ve quiz her zaman önce cihazdaki depoya yazar (`src/lib/kelimeDepo.ts`, `src/lib/quizDepo.ts`). Giriş yapmadan oynanır.
 - Kelime tahmini durumsuz `kb_degerlendir(tarih, slot, tahminler[])` fonksiyonunda değerlendirilir: uygulama o kelimenin bütün tahminlerini gönderir, sunucu renkleri döner; cevap yalnızca oyun bitince (doğru tahmin veya 6 geçerli tahmin) döner. 6 hak sınırı uygulamada uygulanır.
 - Giriş yapılınca (`src/lib/hesap.ts`):
-  - Her kayıt değişikliği ayrıca Firestore'a yazılır.
+  - Bitmiş oyun (kelime bulundu ya da 6 hak bitti, günün üç sorusu cevaplandı) hemen Firestore'a yazılır. Bitmemiş oyun her tahminde yazılmaz: son hali bekletilir, uygulama arka plana geçince (`visibilitychange`, `pagehide`) ve çıkışta tek seferde yazılır. Uygulama yazamadan kapanırsa kayıt cihazda kalır ve sonraki açılıştaki eşitlemede gönderilir. Böylece girişli bir oyuncu günde yaklaşık 6–12 yazı yapar (Spark planında günde 20.000).
   - Açılışta ve girişte eşitleme yapılır: son eşitlemeden beri buluta yazılmış kayıtlar çekilir (`sunucuZamani` alanına göre), cihazdakilerle birleştirilir. Oyunlar yalnızca ilerlediği için daha çok tahmini/cevabı olan kayıt kalır. Cihazda daha ileri olan kayıtlar buluta gönderilir.
   - Firebase kütüphanesi yalnızca gerekince yüklenir: bu cihazda giriş yapılmışsa açılışta, yapılmamışsa "Google ile giriş yap" basılınca.
 - Çıkışta cihazdaki kayıtlar silinir (hesapta kalır). "Hesabımı sil" bulut kayıtlarını ve Firebase hesabını siler (Google Play şartı).

@@ -1,5 +1,6 @@
 // Google hesabıyla giriş (Firebase Authentication) ve kullanıcı verisinin Firestore ile eşitlenmesi.
-// Oyun her zaman önce cihazdaki depoya yazar; girişli kullanıcı varsa kayıt ayrıca buluta gider.
+// Oyun her zaman önce cihazdaki depoya yazar; girişli kullanıcı varsa kayıt ayrıca buluta gider. Firestore'un
+// günlük yazma kotası için bitmiş oyun hemen, bitmemiş oyun uygulama arka plana geçince (veya çıkışta) yazılır.
 // Girişte buluttaki kayıtlar cihazdakilerle birleşir: daha ileri olan (daha çok tahmin/cevap) kalır.
 // Firestore düzeni: kullanicilar/{uid}/kelime/{2026-10-19_sabah}, kullanicilar/{uid}/quiz/{2026-10-19}
 import { useEffect, useState } from 'react'
@@ -9,7 +10,7 @@ import { firebaseAyarli, firebaseYukle, type FirebaseServisleri } from './fireba
 import { yerelUygulama } from './platform'
 import { bulutYaziciAyarla, depoDegisti, type KayitTuru } from './senkron'
 import { kelimeBirlestir, kelimeDeposunuTemizle, kelimeKayitlari, type KelimeKaydi } from './kelimeDepo'
-import { quizBirlestir, quizDeposunuTemizle, quizKayitlari, type QuizKaydi } from './quizDepo'
+import { quizBirlestir, quizDeposunuTemizle, quizKayitlari, quizTamam, type QuizKaydi } from './quizDepo'
 
 export interface Hesap {
   uid: string
@@ -80,10 +81,14 @@ function dinlemeyeBasla(): Promise<FirebaseServisleri> {
           if (u) {
             yaz(GIRISLI, true)
             ayarla({ durum: 'girisli', hesap: hesapBilgisi(u) })
-            bulutYaziciAyarla((tur, anahtar, kayit) => void bulutaYaz(fb, u.uid, tur, anahtar, kayit))
+            if (aktif?.uid !== u.uid) bekleyen.clear()
+            aktif = { fb, uid: u.uid }
+            bulutYaziciAyarla(bulutaBildirildi)
             void esitle(fb, u.uid)
           } else {
             yaz(GIRISLI, false)
+            aktif = null
+            bekleyen.clear()
             bulutYaziciAyarla(null)
             ayarla({ durum: 'girissiz', hesap: null })
           }
@@ -123,6 +128,52 @@ async function bulutaYaz(fb: FirebaseServisleri, uid: string, tur: KayitTuru, an
     // Yazılamayan kayıt cihazda kalır; bir sonraki eşitlemede yeniden gönderilir.
     console.warn('Kayıt buluta yazılamadı', e)
   }
+}
+
+// ===== Bekleyen yazılar =====
+// Bitmemiş oyunun her tahmini ayrı bir Firestore yazısı olmasın diye kayıt burada bekler; aynı oyunun yeni hali
+// eskisinin yerini alır. Uygulama kapanırsa kayıt cihazda kalır ve açılıştaki eşitlemede gönderilir.
+let aktif: { fb: FirebaseServisleri; uid: string } | null = null
+const bekleyen = new Map<string, [KayitTuru, string, unknown]>()
+
+const oyunBitti = (tur: KayitTuru, kayit: unknown) =>
+  tur === 'kelime' ? (kayit as KelimeKaydi).durum !== 'devam' : quizTamam(kayit as QuizKaydi)
+
+function bulutaBildirildi(tur: KayitTuru, anahtar: string, kayit: unknown) {
+  const a = aktif
+  if (!a) return
+  const id = `${tur}/${anahtar}`
+  if (!oyunBitti(tur, kayit)) {
+    bekleyen.set(id, [tur, anahtar, kayit])
+    return
+  }
+  bekleyen.delete(id)
+  void bulutaYaz(a.fb, a.uid, tur, anahtar, kayit)
+}
+
+/** Bekleyen kayıtları tek seferde yazar (uygulama arka plana geçince ve çıkışta). */
+async function bekleyenleriYaz(): Promise<void> {
+  const a = aktif
+  if (!a || bekleyen.size === 0) return
+  const liste = [...bekleyen.values()]
+  bekleyen.clear()
+  const { writeBatch, doc, serverTimestamp } = a.fb.dbModulu
+  const batch = writeBatch(a.fb.db)
+  for (const [tur, anahtar, kayit] of liste)
+    batch.set(doc(a.fb.db, 'kullanicilar', a.uid, tur, anahtar), { ...duzKayit(kayit), sunucuZamani: serverTimestamp() })
+  try {
+    await batch.commit()
+  } catch (e) {
+    // Yazılamayan kayıtlar cihazda kalır; bir sonraki eşitlemede yeniden gönderilir.
+    console.warn('Bekleyen kayıtlar buluta yazılamadı', e)
+  }
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') void bekleyenleriYaz()
+  })
+  window.addEventListener('pagehide', () => void bekleyenleriYaz())
 }
 
 let esitleniyor = false
@@ -208,7 +259,8 @@ export async function googleIleGiris(): Promise<void> {
 /** Çıkışta cihazdaki oyun ve quiz kayıtları silinir (hesapta kalırlar); oyun girişsiz devam eder. */
 export async function cikisYap(): Promise<void> {
   const fb = await dinlemeyeBasla()
-  // Bekleyen yazılar bitsin; bağlantı yoksa en fazla 3 saniye beklenir.
+  // Bitmemiş oyunlar da gönderilsin ve bekleyen yazılar bitsin; bağlantı yoksa en fazla 3 saniye beklenir.
+  await bekleyenleriYaz()
   await Promise.race([fb.dbModulu.waitForPendingWrites(fb.db), new Promise((r) => setTimeout(r, 3000))])
   await fb.authModulu.signOut(fb.auth)
   kelimeDeposunuTemizle()

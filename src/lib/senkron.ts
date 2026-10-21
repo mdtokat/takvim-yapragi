@@ -1,5 +1,6 @@
 // Yerel depolar (kelime ve quiz) ile hesap modülü arasındaki köprü. Depolar Firebase'i tanımaz:
-// bir kayıt değişince buraya haber verir, girişli kullanıcı varsa hesap modülü buluta yazar.
+// bir kayıt değişince buraya haber verir, girişli kullanıcı varsa hesap modülü buluta yazar (bitmemiş oyunu
+// bekletir, uygulama arka plana geçince yazar).
 // Buluttan gelen kayıtlar depoya yazılınca dinleyiciler (ekranlar) yenilenir.
 import { useEffect, useState } from 'react'
 
