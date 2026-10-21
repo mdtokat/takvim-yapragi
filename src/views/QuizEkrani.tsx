@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { gunuGetir, onbellektekiGun } from '../lib/api'
-import { AYLAR, bugun, saatMetni, tarihCoz, trBugun } from '../lib/tarih'
+import { AYLAR, bugun, puanliGun, saatMetni, tarihCoz, trBugun } from '../lib/tarih'
 import {
   SURE_DOLDU,
   cevabi,
@@ -94,9 +94,10 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
   const [yeniBitti, setYeniBitti] = useState(false)
   const [gonderiliyor, setGonderiliyor] = useState(false)
   const [cevapHatasi, setCevapHatasi] = useState('')
-  // Sıralama: girişli ve adı kayıtlı oyuncu bugünün sorularını 30 saniyede cevaplar.
+  // Sıralama: girişli ve adı kayıtlı oyuncu bugünün ve dünün sorularını 30 saniyede cevaplar.
   const oyuncu = useOyuncu()
-  const siraliGun = oyuncu.durum === 'kayitli' && tarih === trBugun()
+  const siraliGun = oyuncu.durum === 'kayitli' && puanliGun(tarih)
+  const bugununMu = tarih === trBugun()
   const [sirali, setSirali] = useState<Record<number, SiraliDurum>>({})
   useEffect(() => setSirali({}), [tarih, oyuncu.durum])
 
@@ -228,10 +229,14 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
     </ol>
   )
   const siralamaSatiri =
-    tarih === trBugun() && (puan !== null || oyuncu.durum === 'kayitli') ? (
+    puanliGun(tarih) && (puan !== null || oyuncu.durum === 'kayitli') ? (
       <p className="quiz-siralama">
-        {puan !== null && <span>Bugünkü puanın: {puan}</span>}
-        <a className="metin-dugme" href="#/siralama/quiz">
+        {puan !== null && (
+          <span>
+            {bugununMu ? 'Bugünkü' : 'Dünkü'} puanın: {puan}
+          </span>
+        )}
+        <a className="metin-dugme" href={`#/siralama/quiz${bugununMu ? '' : '/dun'}`}>
           Sıralamayı gör
         </a>
       </p>
@@ -316,7 +321,7 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
     ? { tur: 'kapali' }
     : siraliGun
       ? (sirali[aktif.sira] ?? { tur: 'yukleniyor' })
-      : tarih === trBugun() && oyuncuBekleniyor(oyuncu)
+      : puanliGun(tarih) && oyuncuBekleniyor(oyuncu)
         ? { tur: 'yukleniyor' }
         : { tur: 'kapali' }
 
@@ -406,6 +411,7 @@ export function QuizEkrani({ tarih }: { tarih: string }) {
               <p className="sure-baslat-baslik">Bu soru sıralamaya giriyor</p>
               <p>30 saniyen var. Doğru cevap 50 puan, kalan her saniye 1 puan daha getirir.</p>
               <p className="aciklama kucuk">Süre Başla'ya basınca başlar; uygulamadan çıksan da durmaz.</p>
+              {!bugununMu && <p className="aciklama kucuk">Dünün sorusu: puanın dünün sıralamasına yazılır.</p>}
               <button className="dugme" onClick={() => void sureyiBaslat()} disabled={gonderiliyor}>
                 {gonderiliyor ? 'Başlıyor…' : 'Başla'}
               </button>

@@ -6,8 +6,9 @@ export type Rota =
   | { ad: 'olay'; id: number }
   | { ad: 'takvim'; ay: string | null }
   | { ad: 'quiz'; tarih: string }
-  | { ad: 'kelime' }
-  | { ad: 'siralama'; oyun: 'kelime' | 'quiz' }
+  | { ad: 'kelime'; tarih: string | null } // null: bugün
+  | { ad: 'siralama'; oyun: 'kelime' | 'quiz'; donem: 'gun' | 'dun' | 'hafta' }
+  | { ad: 'oyuncu'; kimlik: string }
   | { ad: 'ayarlar' }
 
 export function rotaCoz(hash: string): Rota {
@@ -22,9 +23,15 @@ export function rotaCoz(hash: string): Rota {
     case 'quiz':
       return { ad: 'quiz', tarih: parca[1] || bugun() }
     case 'kelime':
-      return { ad: 'kelime' }
+      return { ad: 'kelime', tarih: parca[1] || null }
     case 'siralama':
-      return { ad: 'siralama', oyun: parca[1] === 'quiz' ? 'quiz' : 'kelime' }
+      return {
+        ad: 'siralama',
+        oyun: parca[1] === 'quiz' ? 'quiz' : 'kelime',
+        donem: parca[2] === 'dun' || parca[2] === 'hafta' ? parca[2] : 'gun',
+      }
+    case 'oyuncu':
+      return { ad: 'oyuncu', kimlik: parca[1] ?? '' }
     case 'ayarlar':
       return { ad: 'ayarlar' }
     default:

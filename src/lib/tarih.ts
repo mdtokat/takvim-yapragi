@@ -25,6 +25,18 @@ export function gunEkle(s: string, n: number): string {
   return tarihMetni(d)
 }
 
+/** "21 Ekim" */
+export function gunAyMetni(s: string): string {
+  const d = tarihCoz(s)
+  return d ? `${d.getDate()} ${AYLAR[d.getMonth()]}` : s
+}
+
+/** "16–22 Ekim" veya "30 Ekim – 5 Kasım" */
+export function aralikMetni(baslangic: string, bitis: string): string {
+  const [b, e] = [tarihCoz(baslangic), tarihCoz(bitis)]
+  return b && e && b.getMonth() === e.getMonth() ? `${b.getDate()}–${gunAyMetni(bitis)}` : `${gunAyMetni(baslangic)} – ${gunAyMetni(bitis)}`
+}
+
 export const artikYil = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0
 
 /** 1 = Pazartesi ... 7 = Pazar */
@@ -61,6 +73,15 @@ export function gunFarki(a: string, b: string): number {
 }
 
 export const bulmacaNo = (tarih: string) => gunFarki(BASLANGIC, tarih) + 1
+
+/**
+ * Bu günün soruları ve kelimeleri şimdi süreli ve puanlı oynanabilir mi: bugünün ve dünün içeriği (Türkiye
+ * saati). Puan içeriğin gününe yazılır. Sunucu aynı kuralı uygular (tt_puanli_gun).
+ */
+export function puanliGun(tarih: string, simdi = new Date()): boolean {
+  const fark = gunFarki(tarih, trBugun(simdi))
+  return fark === 0 || fark === 1
+}
 
 /** Türkiye saatiyle bir tarih ve "HH:MM" saatin zaman damgası (ms). */
 export const trZamani = (tarih: string, saat: string) => Date.parse(`${tarih}T${saat}:00Z`) - TR_OFSET_MS

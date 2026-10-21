@@ -4,6 +4,7 @@
 import { supabase } from './supabase'
 import type { Durum } from './harfler'
 import type { Slot } from './sabitler'
+import { trBugun } from './tarih'
 
 export interface Satir {
   tahmin: string
@@ -25,8 +26,9 @@ export interface KelimeSlotu {
   videoBaslik: string | null // yalnızca açılmış kelimede dolu
 }
 
-export interface BugunBilgisi {
+export interface GunBilgisi {
   tarih: string
+  bugun: string // Türkiye saatiyle bugün (sunucudan)
   slotlar: KelimeSlotu[]
 }
 
@@ -40,12 +42,18 @@ export class OyunHatasi extends Error {
   }
 }
 
-export async function bugunuSor(): Promise<BugunBilgisi> {
-  const { data, error } = await supabase.rpc('kb_bugun')
+type HamGun = { tarih: string; bugun?: string; slotlar?: { slot: Slot; acilis: string; acik: boolean; video_baslik: string | null }[] }
+
+/** Bir günün üç kelimesi (tarih verilmezse bugün; gelecek gün istenirse bugün döner). Cevap gelmez. */
+export async function gunuSor(tarih?: string): Promise<GunBilgisi> {
+  let { data, error } = await supabase.rpc('kb_gun', { p_tarih: tarih ?? null })
+  // kb_gun henüz yoksa (veritabanı güncellenmeden yayımlanan sürüm) bugünün kelimeleri eski fonksiyondan gelir.
+  if (error && (!tarih || tarih === trBugun())) ({ data, error } = await supabase.rpc('kb_bugun'))
   if (error) throw new OyunHatasi('baglanti', error.message)
-  const d = data as { tarih: string; slotlar?: { slot: Slot; acilis: string; acik: boolean; video_baslik: string | null }[] }
+  const d = data as HamGun
   return {
     tarih: d.tarih,
+    bugun: d.bugun ?? d.tarih,
     slotlar: (d.slotlar ?? []).map((s) => ({ slot: s.slot, acilis: s.acilis, acik: s.acik, videoBaslik: s.video_baslik ?? null })),
   }
 }

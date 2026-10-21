@@ -2149,6 +2149,124 @@ input[type='time'] {
 .siralama-kurallar p {
   margin: 6px 0;
 }
+.siralama-ad-baglanti {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--cizgi);
+  text-underline-offset: 3px;
+}
+.sampiyonlar {
+  margin: 14px 0 0;
+  padding: 10px 14px 12px;
+  background: var(--kagit);
+  border: 1px solid var(--cizgi);
+  border-top: 3px solid var(--altin);
+  border-radius: 2px;
+}
+.sampiyonlar h2 {
+  margin: 0;
+  font-family: var(--font-baslik);
+  font-size: 1.05rem;
+}
+.sampiyonlar .aciklama {
+  margin: 2px 0 6px;
+}
+.sampiyon-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sampiyon-liste li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 0;
+}
+.sampiyon-sira {
+  flex: none;
+  min-width: 2ch;
+  font-family: var(--font-baslik);
+  font-weight: 800;
+  color: var(--altin);
+}
+.kelime-gun {
+  flex: none;
+  align-self: center;
+  width: min(100% - 32px, 260px);
+  margin: 0 0 8px;
+  padding: 2px;
+}
+.kelime-gun button {
+  padding: 4px 8px;
+  font-size: 0.95rem;
+}
+.oyuncu > h1 {
+  margin-bottom: 2px;
+  overflow-wrap: anywhere;
+}
+.oyuncu-alt {
+  margin: 0;
+}
+.oyuncu-ozet {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 6px 0 16px;
+}
+.oyuncu-kart {
+  padding: 10px 14px 12px;
+  background: var(--kagit);
+  border: 1px solid var(--cizgi);
+  border-radius: 2px;
+}
+.oyuncu-kart h2 {
+  margin: 0 0 4px;
+  font-family: var(--font-baslik);
+  font-size: 1rem;
+}
+.oyuncu-kart p {
+  margin: 2px 0 0;
+}
+.oyuncu-sira strong {
+  font-family: var(--font-baslik);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--kirmizi);
+}
+.oyuncu-sira small {
+  color: var(--soluk);
+}
+.oyuncu-puan {
+  font-family: var(--font-baslik);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.oyuncu-gun {
+  margin: 0 0 14px;
+}
+.oyuncu-gun h3 {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--murekkep);
+  font-family: var(--font-baslik);
+  font-size: 1rem;
+}
+.oyuncu-gun ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.oyuncu-gun li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--cizgi);
+}
 
 /* ===== Alt menü ===== */
 .alt-menu {

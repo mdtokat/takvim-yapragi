@@ -8,7 +8,7 @@ export function AdPenceresi() {
   if (!adSorulsun(oyuncu)) return null
   return (
     <Pencere baslik="Sıralamada hangi adla görünmek istersin?" sinif="pencere-ad" onKapat={adSormayiAtla}>
-      <p>Instagram kullanıcı adını (@ ile) ya da Facebook'taki adını yaz. Bu ad günlük ve haftalık sıralamalarda herkese görünür.</p>
+      <p>Instagram kullanıcı adını (@ ile) ya da Facebook'taki adını yaz. Bu ad ve haftalık sonuçların sıralamalarda herkese görünür.</p>
       <AdFormu />
       <p className="aciklama kucuk">
         Sıralamaya giren sorularda 30, kelimelerde 90 saniye süren olur. Adını Ayarlar'dan değiştirebilirsin. Başkasına ait bir ad

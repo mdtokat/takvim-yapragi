@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Pencere } from './Pencere'
 import type { Istatistik } from '../../lib/istatistik'
 import type { BitisBilgisi, Satir } from '../../lib/kelimeOyunu'
-import { bulmacaNo, sureMetni } from '../../lib/tarih'
+import { bulmacaNo, sureMetni, trBugun } from '../../lib/tarih'
 import { linkAc, paylas } from '../../lib/platform'
 import { useAyarlar } from '../../lib/ayarlar'
 import { useHesap } from '../../lib/hesap'
@@ -79,7 +79,7 @@ export function SonucPenceresi({ tarih, slot, sonrakiAcilis, zorMod, satirlar, b
                 className="metin-dugme"
                 onClick={() => {
                   onKapat()
-                  git('/siralama/kelime')
+                  git(`/siralama/kelime${tarih === trBugun() ? '' : '/dun'}`)
                 }}
               >
                 Sıralamayı gör

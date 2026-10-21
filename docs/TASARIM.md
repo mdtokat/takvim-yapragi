@@ -108,7 +108,7 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 - Açık sorular sırayla sorulur. Her cevap hemen kaydedilir; kullanıcı uygulamadan çıkıp sonraki videoda dönebilir.
 - Soru başlığının üstünde kaynağı yazar: "Sabah videosundan · Musluktaki Girdap Bilmecesi".
 - Doğru cevap istemciye gelmez: cevap `tt_quiz_cevapla` RPC'sinde değerlendirilir ve doğru seçenek ancak cevaptan sonra döner. Bu yüzden cevap vermek için bağlantı gerekir.
-- Sıralamaya katılan oyuncu bugünün sorularını süreli oynar (Bölüm 5.7): soru metni "Başla"ya basınca görünür, 30 saniye sayılır; süre dolarsa cevap "Süre doldu" olur.
+- Sıralamaya katılan oyuncu bugünün ve dünün sorularını süreli oynar (Bölüm 5.7): soru metni "Başla"ya basınca görünür, 30 saniye sayılır; süre dolarsa cevap "Süre doldu" olur. Dünün sorusunun puanı dünün sıralamasına yazılır.
 - Cevaptan sonra doğru/yanlış, 1 cümlelik açıklama, "Videoyu izle" ve "Kaynak" bağlantıları gelir. Videonun kendi bağlantısı yoksa Instagram hesabı açılır.
 - Üç soru da cevaplanınca sonuç ekranında "3/3" ve seri bilgisi yer alır, paylaş butonu bulunur.
 - Seri yerel olarak (localStorage) tutulur ve yalnızca aynı gün tamamlanan günleri sayar.
@@ -119,16 +119,21 @@ Uygulama hem web'de (GitHub Pages) hem de Android'de (Capacitor ile Google Play)
 - Harfiyen oyunu, alt menüde "Kelime" sekmesi. Ayrıntılar `docs/KELIME_OYUNU.md`.
 - Günde 3 kelime, her videoya bir tane: sabah 08:00, öğlen 12:00, akşam 19:00. Her kelime videosuyla aynı saatte açılır ve o videoda geçer.
 - Ekran gazetenin bulmaca köşesi gibidir: manşet, günün programı (Sabah, Öğlen, Akşam kartları; saat, durum ve sıradaki kelimeye geri sayım), "Sıradaki kelime … açılıyor" satırı, tahta, 5 harf girilince etkinleşen Gönder düğmesi ve klavye. Ayrıntılar `docs/KELIME_OYUNU.md` Bölüm 6.1.
-- Bugün ekranındaki "Günün kelimesi" köşesi açık kelimeyi ve sıradakinin saatini yazar.
+- Ekranın üstünde "Bugün · Dün" seçicisi vardır (`#/kelime`, `#/kelime/YYYY-AA-GG`). Dünün kelimeleri sıralamaya katılan oyuncuya ertesi gün 23:59'a kadar puan getirir.
+- Bugün ekranındaki "Günün kelimesi" köşesi açık kelimeyi ve sıradakinin saatini yazar. Dünün yaprağında da köşe çıkar ve dünün kelimelerini açar; sıralamadaki oyuncuya "23:59'a kadar puanlı" notu gösterilir.
 - Kelime videodan geliyorsa deneme sayacının yanında yazar: "Deneme 2/6 · sabah videosunda geçiyor."
 - Oyun bitince anlam, örnek cümle ve kelimenin geçtiği video gösterilir.
 
 ### 5.7 Sıralama
-- Alt menüde "Sıralama" sekmesi (`#/siralama/kelime`, `#/siralama/quiz`). Kelime ve sorular ayrı sekmelerdir; her birinde "Bugün" ve "Bu hafta" seçilir.
-- Hafta Türkiye saatiyle pazartesi 00:00'da başlar ve pazar biter (yeni haftada liste boş başlar; eski puanlar silinmez).
+- Alt menüde "Sıralama" sekmesi (`#/siralama/kelime`, `#/siralama/quiz`; dönem adreste: `/dun`, `/hafta`). Kelime ve sorular ayrı sekmelerdir; her birinde "Bugün", "Dün" ve "Bu hafta" seçilir.
+- Hafta Türkiye saatiyle cuma 00:00'da başlar ve perşembe biter (yeni haftada liste boş başlar).
+- **Geçen haftanın şampiyonları:** Listenin üstündeki kart her oyunda geçen haftanın ilk üç sırasını gösterir. Perşembenin içeriği cuma da oynanabildiği için sonuç cumartesi 00:00'da kesinleşir; o zamana kadar kartta bu yazar.
+- **Oyuncu sayfası** (`#/oyuncu/<kimlik>`): Sıralamadaki bir ada dokununca açılır. "Bu hafta" ve "Geçen hafta" için iki oyundaki sıra ve puan, gün gün her sıralı soru ve kelimenin sonucu (doğru/yanlış, bulduğu deneme), süresi ve puanı. Tahminler ve seçilen şıklar gösterilmez, çünkü dünün içeriği hâlâ oynanabilir. Adres Firebase kimliğiyle değil, oyuncuya verilen rastgele `kimlik` ile kurulur. Oyuncu kendi sayfasını Ayarlar > Sıralama'dan da açar.
+- **Saklama:** Puanlar iki hafta (geçen hafta ve bu hafta) tutulur; daha eskisi her gece silinir (Bölüm 7.2).
 - Liste ilk 50 oyuncuyu gösterir; oyuncu listede değilse altta "Sen: 132. sıra · 412 puan" yazar. Eşit puanda toplam süresi kısa olan öndedir.
-- **Katılım:** Google ile girişten sonra bir pencere sorar: "Sıralamada hangi adla görünmek istersin?" Instagram kullanıcı adı (@ ile) veya Facebook'taki ad yazılır; adın herkese görüneceği söylenir. "Şimdilik sıralamaya girme" ile atlanabilir; Ayarlar > Sıralama'dan sonra katılınır, ad değiştirilir (haftada bir; ilk 15 dakika serbest) veya sıralamadan çıkılır (ad ve puanlar silinir). Çıkan oyuncu aynı gün yeniden katılırsa o günün soruları ve kelimeleri sıralamaya girmez (cevaplarını bildiği oyunları yeniden puanlı oynamasın diye).
-- **Süre:** Sıralamaya katılan oyuncu yalnızca bugünün sorularını ve kelimelerini süreli oynar. Süre "Başla"ya basınca sunucuda başlar, uygulamadan çıkılsa da durmaz; sunucu ağ gecikmesi için 2 saniye tolerans tanır. Cihazda süresiz oynanmaya başlanmış kelime sıralamaya girmez. Katılmayanlar ve geçmiş günler süresiz ve puansız oynanır.
+- **Katılım:** Google ile girişten sonra bir pencere sorar: "Sıralamada hangi adla görünmek istersin?" Instagram kullanıcı adı (@ ile) veya Facebook'taki ad yazılır; adın herkese görüneceği söylenir. "Şimdilik sıralamaya girme" ile atlanabilir; Ayarlar > Sıralama'dan sonra katılınır, ad değiştirilir (haftada bir; ilk 15 dakika serbest) veya sıralamadan çıkılır (ad ve puanlar silinir). Çıkan oyuncu yeniden katılırsa çıktığı günün ve önceki günün soruları ve kelimeleri sıralamaya girmez (cevaplarını bildiği oyunları yeniden puanlı oynamasın diye).
+- **Süre:** Sıralamaya katılan oyuncu bugünün ve dünün sorularını ve kelimelerini süreli oynar. Puan içeriğin gününe yazılır: dünün kelimesi dünün listesine ve o haftaya sayılır. Süre "Başla"ya basınca sunucuda başlar, uygulamadan çıkılsa da durmaz; sunucu ağ gecikmesi için 2 saniye tolerans tanır. Cihazda süresiz oynanmaya başlanmış kelime sıralamaya girmez. Katılmayanlar ve daha eski günler süresiz ve puansız oynanır.
+- **Reklam (ileride):** Dünün içeriği reklam izleyerek açılacak. Sunucudaki tek kontrol noktası `tt_puanli_gun(uid, tarih)`; hak kontrolü oraya eklenir (ödüllü reklamın doğrulaması için AdMob sunucu bildirimi bir Supabase Edge Function'a gelir).
 - **Puan:**
   - Soru (30 sn): doğru cevap 50 puan + kalan her saniye 1 puan (en çok 80). Yanlış veya süre dolarsa 0.
   - Kelime (90 sn): bulunan denemeye göre 100, 80, 60, 40, 25, 10 puan + kalan sürenin her 3 saniyesi için 1 puan (en çok 30). Bulunamazsa veya süre dolarsa 0.
@@ -308,32 +313,39 @@ create policy tt_hb_ekle on tt_hata_bildirimleri
 
 ### 7.2 Sıralama
 
-Göçler: `supabase/migrations/20261019180000_mindmash_siralama.sql` ve `20261019180100_mindmash_siralama_oyuncu_sil.sql` (silme fonksiyonu ayrı; Supabase bağlayıcısı silme içeren göçte onay ister). Tablolarda politika yoktur; istemci yalnızca aşağıdaki `security definer` fonksiyonları çağırır. Kullanıcı kimliği Firebase oturum anahtarından gelir (`tt_firebase_uid()`: `iss = https://securetoken.google.com/mindmash-takvim`, `aud = mindmash-takvim` ise `sub`; anahtarda `role` talebi olmadığı için istek `anon` rolüyle çalışır).
+Göçler: `supabase/migrations/20261019180000_mindmash_siralama.sql`, `20261019180100_mindmash_siralama_oyuncu_sil.sql` (silme fonksiyonu ayrı; Supabase bağlayıcısı silme içeren göçte onay ister), `20261019200000_mindmash_siralama_cikis.sql` ve `20261021120000_mindmash_dun_ve_hafta.sql` (dünün içeriği, cuma haftası, şampiyonlar, oyuncu sayfası, iki haftalık saklama). Tablolarda politika yoktur; istemci yalnızca aşağıdaki `security definer` fonksiyonları çağırır. Kullanıcı kimliği Firebase oturum anahtarından gelir (`tt_firebase_uid()`: `iss = https://securetoken.google.com/mindmash-takvim`, `aud = mindmash-takvim` ise `sub`; anahtarda `role` talebi olmadığı için istek `anon` rolüyle çalışır).
 
 ```sql
 tt_oyuncular (uid text pk, ad, ad_turu 'instagram'|'facebook', ad_anahtar unique,
-              durum 'yeni'|'onayli'|'red', ad_degisim, olusturma)
+              durum 'yeni'|'onayli'|'red', ad_degisim, olusturma,
+              kimlik uuid unique)   -- oyuncu sayfasının herkese açık adresi
 tt_quiz_puanlari (uid, tarih, sira, baslangic, cevap_zamani, secim, dogru, puan)   -- pk (uid, tarih, sira)
 kb_puanlar       (uid, tarih, slot, baslangic, bitis, tahminler[], durum, puan)    -- pk (uid, tarih, slot)
 -- Puan tabloları tt_oyuncular'a on delete cascade ile bağlıdır.
-tt_siralama_cikislari (uid_ozet, tarih)   -- sıralamadan çıkış günü; uid'nin sha256 özeti, gün sonuna kadar
+tt_siralama_cikislari (uid_ozet, tarih)   -- sıralamadan çıkış günü; uid'nin sha256 özeti, iki gün tutulur
                                           -- (göç 20261019200000_mindmash_siralama_cikis.sql)
 ```
 
 | Fonksiyon | Ne yapar |
 |---|---|
-| `tt_oyuncu()` | Kendi adı ve durumu (yoksa null) |
+| `tt_oyuncu()` | Kendi adı, durumu ve oyuncu sayfası `kimlik`'i (yoksa null) |
 | `tt_oyuncu_kaydet(ad, tur)` | Adı doğrular ve kaydeder. Hatalar: `ad_gecersiz`, `ad_alinmis`, `ad_degisim_siniri` |
-| `tt_oyuncu_sil()` | Adı ve bütün puanları siler (sıralamadan çıkma, hesap silme). Kimliğin özetini (sha256) çıkış günüyle `tt_siralama_cikislari`'na yazar; o gün `tt_quiz_durum` ve `kb_sirali_durum` yeni süre başlatmaz (`gun_disi`). Eski özetler sonraki çıkışta silinir |
-| `tt_quiz_durum(tarih, sira, baslat)` | Sıralamaya giren sorunun durumu; `baslat` ile süreyi başlatır (yalnızca bugünün açılmış sorusu). Süresi dolmuşsa sonuçlandırır |
+| `tt_oyuncu_sil()` | Adı ve bütün puanları siler (sıralamadan çıkma, hesap silme). Kimliğin özetini (sha256) çıkış günüyle `tt_siralama_cikislari`'na yazar; çıkış günü ve önceki günün içeriği için `tt_quiz_durum` ve `kb_sirali_durum` yeni süre başlatmaz (`gun_disi`) |
+| `tt_quiz_durum(tarih, sira, baslat)` | Sıralamaya giren sorunun durumu; `baslat` ile süreyi başlatır (bugünün veya dünün açılmış sorusu, `tt_puanli_gun`). Süresi dolmuşsa sonuçlandırır |
 | `tt_quiz_cevapla(tarih, sira, secim)` | Cevabı değerlendirir ve doğru seçeneği döner. Başlatılmış sıralı soruda süre ve puanı kaydeder (`secim` null: süre doldu); diğer durumda yalnızca sonuç döner |
-| `kb_sirali_durum(tarih, slot, baslat)` | Sıralamaya giren kelimenin durumu ve tahminlerin renkleri; `baslat` ile süreyi başlatır |
+| `kb_sirali_durum(tarih, slot, baslat)` | Sıralamaya giren kelimenin durumu ve tahminlerin renkleri; `baslat` ile süreyi başlatır (bugünün veya dünün kelimesi) |
 | `kb_sirali_tahmin(tarih, slot, tahmin)` | Tahmini ekler; sözlükte yoksa `gecerli: false` (hak harcatmaz, süre işler). Oyun bitince cevap döner |
-| `tt_siralama(oyun, donem, tarih?)` | `oyun`: `kelime`/`quiz`, `donem`: `gun`/`hafta`. İlk 50 oyuncu ve isteği yapanın sırası; `red` adlar listelenmez. Girişsiz de çağrılır |
+| `tt_siralama(oyun, donem, tarih?)` | `oyun`: `kelime`/`quiz`, `donem`: `gun`/`hafta` (cuma–perşembe); `tarih` dönemin bir günü (dün için dünün tarihi). İlk 50 oyuncu (`kimlik` ile) ve isteği yapanın sırası; `kesin`: dönem artık değişmez. `red` adlar listelenmez. Girişsiz de çağrılır |
+| `tt_sampiyonlar()` | Geçen haftanın her oyundaki ilk üç sırası ve `kesin` (cumartesi 00:00'dan sonra). Girişsiz çağrılır |
+| `tt_oyuncu_haftasi(kimlik, tarih?)` | Oyuncunun bir haftası: iki oyundaki sıra, puan, oyun ve oyuncu sayısı; her sıralı kelimenin durumu, deneme sayısı, süresi, puanı; her sorunun durumu (doğru, yanlış, süre doldu), süresi, puanı. Tahminler ve seçilen şık dönmez. `red` adlı oyuncu yalnızca kendine görünür (`oyuncu_yok`) |
+| `kb_gun(tarih?)` | Bir günün üç kelimesi (`kb_bugun`'ün tarih alan hali; gelecek gün istenirse bugün) ve Türkiye saatiyle `bugun` |
 
 - `tt_quiz.dogru_index` sütunu, eski Android sürümü okuduğu için hâlâ `anon` tarafından okunabilir. Yeni istemci okumaz. Eski sürümler güncellenince sütun okumaya kapatılmalı (`revoke select (dogru_index) on tt_quiz from anon, authenticated` ve politikaya uygun sütun listesi); o zamana kadar soru sıralamasında hile mümkündür.
 
-> **Saat dilimi notu:** Supabase sunucusu UTC çalışır. "Bugün" her yerde `(now() at time zone 'Europe/Istanbul')::date` ile hesaplanır.
+- Yardımcılar (istemciye kapalı): `tt_bugun()`, `tt_hafta_basi(tarih)` (cuma), `tt_saklama_basi()` (geçen haftanın cuması), `tt_puanli_gun(uid, tarih)` (bugün veya dün ve o günden sonra sıralamadan çıkmamış; reklam hakkı buraya eklenecek), `tt_siralama_tablosu(oyun, baslangic, bitis)` (sıralama, şampiyonlar ve oyuncu sayfası aynı hesabı kullanır; süresi dolmuş ama sonuçlanmamış oyun tam süre sayılır).
+- **Saklama:** `tt_eski_puanlari_sil()` geçen haftanın cumasından eski puanları ve iki günden eski çıkış kayıtlarını siler. `pg_cron` işi `mindmash-eski-puanlar` her gece 00:05'te (Türkiye saati, `5 21 * * *` UTC) çalıştırır. Böylece puan tabloları yaklaşık 15 günlük veri tutar (1.000 günlük oyuncuda ~20 MB).
+
+> **Saat dilimi notu:** Supabase sunucusu UTC çalışır. "Bugün" her yerde `(now() at time zone 'Europe/Istanbul')::date` (`tt_bugun()`) ile hesaplanır.
 
 ---
 
@@ -517,7 +529,7 @@ export const hataBildir = (olay_id, not_metni) =>
 | Hassas tarihî olaylar | Yazım kılavuzu: olgusal, tarafsız, grafik ayrıntısız |
 | Sıralamada hile: cevabı başka hesaptan, girişsiz oynayarak veya arkadaştan öğrenmek | Tamamen önlenemez. Süre ve puan sunucuda ölçülür; doğru cevap istemciye önceden gelmez (eski sürüm için `dogru_index` kapatılana kadar sorularda açık var). Şüpheli sonuçlar (hep 1. denemede, çok kısa sürede) incelenebilir. |
 | Sıralamada başkasına ait veya uygunsuz ad | Ad doğrulanmaz; kelime bakım görevi adları denetler, `red` adlar görünmez. Aynı ad iki kez alınamaz. |
-| Sıralama adı kişisel veridir | Katılım isteğe bağlı; pencere adın herkese görüneceğini söyler. Sıralamadan çıkma ve hesap silme adı ve puanları siler. Gizlilik politikasında yazar. |
+| Sıralama adı ve haftalık sonuçlar kişisel veridir | Katılım isteğe bağlı; pencere adın ve haftalık sonuçların herkese görüneceğini söyler. Puanlar iki hafta saklanır. Sıralamadan çıkma ve hesap silme adı ve puanları siler. Gizlilik politikasında yazar. |
 
 ---
 

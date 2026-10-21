@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DENEME_SAYISI, KELIME_UZUNLUGU, harfDurumlari, harfNormalle, kazanildi, oyunBitti, zorModHatasi } from '../lib/harfler'
-import { OyunHatasi, bugunuSor, degerlendir, kelimeOner, type KelimeSlotu, type Satir } from '../lib/kelimeOyunu'
+import { OyunHatasi, degerlendir, gunuSor, kelimeOner, type KelimeSlotu, type Satir } from '../lib/kelimeOyunu'
 import { kelimeAnahtari, kelimeKaydet, kelimeKayitlari, type KelimeKaydi } from '../lib/kelimeDepo'
 import { useDepoSurumu } from '../lib/senkron'
 import { istatistikHesapla, type Istatistik } from '../lib/istatistik'
@@ -8,7 +8,8 @@ import { ayarlariGuncelle, ayarlariOku, useAyarlar } from '../lib/ayarlar'
 import { hareketAzalt } from '../lib/platform'
 import { SLOT_ADI, SLOT_SAATI, type Slot } from '../lib/sabitler'
 import { sesCal } from '../lib/ses'
-import { AYLAR, gunEkle, saatMetni, saatteMetni, sureMetni, trBugun, trZamani } from '../lib/tarih'
+import { AYLAR, gunEkle, puanliGun, saatMetni, saatteMetni, sureMetni, trBugun, trZamani } from '../lib/tarih'
+import { degistir } from '../lib/yonlendirme'
 import {
   KELIME_SURESI,
   SiralamaHatasi,
@@ -51,11 +52,13 @@ const tarihBasligi = (t: string) => {
   return t ? `${g} ${AYLAR[a - 1]}` : ''
 }
 
-export function KelimeEkrani() {
+/** istenenTarih: adresteki gün (#/kelime/YYYY-AA-GG); null ise bugün. */
+export function KelimeEkrani({ tarih: istenenTarih }: { tarih: string | null }) {
   const ayar = useAyarlar()
   const depoSurumu = useDepoSurumu()
   const [asama, setAsama] = useState<Asama>('yukleniyor')
   const [tarih, setTarih] = useState('')
+  const [bugunTarih, setBugunTarih] = useState('') // Türkiye saatiyle bugün (sunucudan)
   // Günde üç kelime: her biri kendi videosunun (sabah, öğlen, akşam) yayın saatinde açılır.
   const [slotlar, setSlotlar] = useState<KelimeSlotu[]>([])
   const [secili, setSecili] = useState<Slot | null>(null)
@@ -87,9 +90,9 @@ export function KelimeEkrani() {
         Object.values(kayitlar)
           .filter((k) => k.durum !== 'devam')
           .map((k) => ({ tarih: k.tarih, deneme: k.tahminler.length, kazandi: k.durum === 'kazandi' })),
-        tarih || trBugun(),
+        bugunTarih || trBugun(),
       ),
-    [kayitlar, tarih],
+    [kayitlar, bugunTarih],
   )
 
   const kayit = secili && tarih ? (kayitlar[kelimeAnahtari(tarih, secili)] ?? null) : null
@@ -102,8 +105,8 @@ export function KelimeEkrani() {
   // Oyun başladıktan sonra zor mod o kelime için sabit kalır; ayar değişikliği sonraki kelimede geçerli olur.
   const zorMod = kayit && satirlar.length > 0 ? kayit.zorMod : ayar.zorMod
   const durumlar = useMemo(() => harfDurumlari(satirlar.slice(0, renkliSatir)), [satirlar, renkliSatir])
-  // Sıralamaya yalnızca bugünün, cihazda süresiz oynanmaya başlanmamış kelimesi girer.
-  const siraliAday = !!seciliSlot?.acik && tarih === trBugun() && (!kayit || !!kayit.sirali || kayit.tahminler.length === 0)
+  // Sıralamaya bugünün ve dünün, cihazda süresiz oynanmaya başlanmamış kelimesi girer.
+  const siraliAday = !!seciliSlot?.acik && puanliGun(tarih) && (!kayit || !!kayit.sirali || kayit.tahminler.length === 0)
   const siraliOlabilir = oyuncu.durum === 'kayitli' && siraliAday
   const siraliDurum: SiraliDurum =
     secili && siraliOlabilir
@@ -138,8 +141,9 @@ export function KelimeEkrani() {
       setAsama('yukleniyor')
       setPencere(null)
       try {
-        const b = await bugunuSor()
+        const b = await gunuSor(istenenTarih ?? undefined)
         setTarih(b.tarih)
+        setBugunTarih(b.bugun)
         setSlotlar(b.slotlar)
         if (b.slotlar.length === 0) {
           setAsama('hazirlaniyor')
@@ -167,7 +171,7 @@ export function KelimeEkrani() {
         setAsama('hata')
       }
     },
-    [slotSec],
+    [slotSec, istenenTarih],
   )
 
   useEffect(() => {
@@ -225,14 +229,15 @@ export function KelimeEkrani() {
   useEffect(() => {
     const kontrol = () => {
       if (document.visibilityState !== 'visible' || !tarih) return
-      if (trBugun() !== tarih) {
+      if (!istenenTarih && trBugun() !== tarih) {
         void baslat()
         return
       }
+      if (trBugun() !== tarih) return // geçmiş gün: kelimelerin hepsi açık
       const acilan = slotlar.filter((s) => !s.acik && Date.parse(s.acilis) <= Date.now())
       if (acilan.length === 0) return
       if (acilan.some((s) => s.slot === secili)) void baslat(secili ?? undefined)
-      else void bugunuSor().then((b) => b.tarih === tarih && setSlotlar(b.slotlar)).catch(() => undefined)
+      else void gunuSor(tarih).then((b) => b.tarih === tarih && setSlotlar(b.slotlar)).catch(() => undefined)
     }
     document.addEventListener('visibilitychange', kontrol)
     const t = setInterval(kontrol, 60_000)
@@ -240,7 +245,7 @@ export function KelimeEkrani() {
       document.removeEventListener('visibilitychange', kontrol)
       clearInterval(t)
     }
-  }, [tarih, slotlar, secili, baslat])
+  }, [tarih, istenenTarih, slotlar, secili, baslat])
 
   // Geri sayımlar için saniyelik saat.
   useEffect(() => {
@@ -251,10 +256,16 @@ export function KelimeEkrani() {
   const oynanabilir =
     asama === 'oyun' && !kilitli && !bitti && !gonderiliyor && !animasyon && (siraliDurum.tur === 'kapali' || siraliDurum.tur === 'suruyor')
   const gonderilebilir = oynanabilir && [...mevcut].length === KELIME_UZUNLUGU
-  // Sıradaki kelime: bugünün açılmamış videosu, yoksa yarın sabah 08:00.
-  const siradaki = slotlar.find((s) => !s.acik) ?? null
-  const yarinIlk = tarih ? trZamani(gunEkle(tarih, 1), SLOT_SAATI.sabah) : 0
-  const sonrakiAcilis = siradaki ? Date.parse(siradaki.acilis) : yarinIlk
+  // Sıradaki kelime: bugünün açılmamış videosu, yoksa yarın sabah 08:00. Geçmiş bir gün açıksa bugünün
+  // video saatlerine göre hesaplanır.
+  const bugunMu = !!tarih && tarih === bugunTarih
+  const siradaki = bugunMu ? (slotlar.find((s) => !s.acik) ?? null) : null
+  const yarinIlk = bugunTarih ? trZamani(gunEkle(bugunTarih, 1), SLOT_SAATI.sabah) : 0
+  const sonrakiAcilis = siradaki
+    ? Date.parse(siradaki.acilis)
+    : bugunMu || !bugunTarih
+      ? yarinIlk
+      : ((Object.keys(SLOT_SAATI) as Slot[]).map((s) => trZamani(bugunTarih, SLOT_SAATI[s])).find((t) => t > simdi) ?? yarinIlk)
   // Bitmiş bir kelimeden sonra geçilebilecek, açık ve bitmemiş başka bir kelime
   const digerAcik = slotlar.find((s) => s.acik && s.slot !== secili && !oyunBitti(oyunlar[s.slot] ?? []))
 
@@ -445,6 +456,12 @@ export function KelimeEkrani() {
     sesCal('tik')
     slotSec(s.slot, oyunlar[s.slot] ?? [])
   }
+  const dunTarih = bugunTarih ? gunEkle(bugunTarih, -1) : ''
+  const gunSec = (t: string) => {
+    if (t === tarih) return
+    sesCal('tik')
+    degistir(t === bugunTarih ? '/kelime' : `/kelime/${t}`)
+  }
 
   return (
     <div className="kelime">
@@ -467,11 +484,28 @@ export function KelimeEkrani() {
         </button>
       </header>
 
+      {bugunTarih && (
+        <div className="bolumlu-secici kelime-gun" role="radiogroup" aria-label="Gün">
+          {[
+            { t: bugunTarih, ad: 'Bugün' },
+            { t: dunTarih, ad: 'Dün' },
+          ].map((g) => (
+            <button key={g.ad} role="radio" aria-checked={tarih === g.t} disabled={gonderiliyor || animasyon} onClick={() => gunSec(g.t)}>
+              {g.ad}
+            </button>
+          ))}
+        </div>
+      )}
+
       {slotlar.length > 0 && (
         <KelimeProgrami slotlar={slotlar} oyunlar={oyunlar} secili={secili} simdi={simdi} pasif={gonderiliyor || animasyon} onSec={sec} />
       )}
 
-      {asama === 'oyun' && !(kilitli && siradaki?.slot === secili) && (
+      {asama === 'oyun' && !bugunMu && puanliGun(tarih) && oyuncu.durum === 'kayitli' && (
+        <p className="kelime-sonraki">Dünün kelimeleri bu gece 23:59'a kadar sıralamaya girer; puanı dünün sıralamasına yazılır.</p>
+      )}
+
+      {asama === 'oyun' && bugunMu && !(kilitli && siradaki?.slot === secili) && (
         <p className="kelime-sonraki">
           {siradaki
             ? `Sıradaki kelime ${SLOT_ADI[siradaki.slot].toLocaleLowerCase('tr-TR')} videosuyla ${saatteMetni(siradaki.acilis)} açılıyor.`
@@ -484,7 +518,11 @@ export function KelimeEkrani() {
       <div className="tahta" aria-busy={asama === 'yukleniyor'}>
         {asama === 'hazirlaniyor' ? (
           <div className="bos-durum">
-            <p>Bugünün kelimeleri hazırlanıyor. Yeni bulmacalar her gün ekleniyor.</p>
+            <p>
+              {istenenTarih && istenenTarih !== bugunTarih
+                ? 'Bu günün kelimeleri bulunamadı.'
+                : 'Bugünün kelimeleri hazırlanıyor. Yeni bulmacalar her gün ekleniyor.'}
+            </p>
             <button className="dugme" onClick={() => void baslat()}>
               Yeniden dene
             </button>
@@ -527,6 +565,7 @@ export function KelimeEkrani() {
                 <p className="sure-baslat-baslik">Bu kelime sıralamaya giriyor</p>
                 <p>90 saniyen var. Bulduğun denemeye göre 100, 80, 60, 40, 25 ya da 10 puan; kalan her 3 saniye 1 puan daha.</p>
                 <p className="aciklama kucuk">Süre Başla'ya basınca başlar; uygulamadan çıksan da durmaz.</p>
+                {!bugunMu && <p className="aciklama kucuk">Dünün kelimesi: puanın dünün sıralamasına yazılır.</p>}
                 <button className="dugme" onClick={() => void sureyiBaslat()} disabled={gonderiliyor}>
                   {gonderiliyor ? 'Başlıyor…' : 'Başla'}
                 </button>
@@ -584,7 +623,7 @@ export function KelimeEkrani() {
               </button>
             )}
             {kayit?.sirali && (
-              <a className="dugme dugme-ikincil" href="#/siralama/kelime">
+              <a className="dugme dugme-ikincil" href={`#/siralama/kelime${bugunMu ? '' : '/dun'}`}>
                 Sıralama
               </a>
             )}
