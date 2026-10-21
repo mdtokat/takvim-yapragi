@@ -313,7 +313,7 @@ create policy tt_hb_ekle on tt_hata_bildirimleri
 
 ### 7.2 Sıralama
 
-Göçler: `supabase/migrations/20261019180000_mindmash_siralama.sql`, `20261019180100_mindmash_siralama_oyuncu_sil.sql` (silme fonksiyonu ayrı; Supabase bağlayıcısı silme içeren göçte onay ister), `20261019200000_mindmash_siralama_cikis.sql` ve `20261021120000_mindmash_dun_ve_hafta.sql` (dünün içeriği, cuma haftası, şampiyonlar, oyuncu sayfası, iki haftalık saklama). Tablolarda politika yoktur; istemci yalnızca aşağıdaki `security definer` fonksiyonları çağırır. Kullanıcı kimliği Firebase oturum anahtarından gelir (`tt_firebase_uid()`: `iss = https://securetoken.google.com/mindmash-takvim`, `aud = mindmash-takvim` ise `sub`; anahtarda `role` talebi olmadığı için istek `anon` rolüyle çalışır).
+Göçler: `supabase/migrations/20261019180000_mindmash_siralama.sql`, `20261019180100_mindmash_siralama_oyuncu_sil.sql` (silme fonksiyonu ayrı; Supabase bağlayıcısı silme içeren göçte onay ister), `20261019200000_mindmash_siralama_cikis.sql`, `20261021120000_mindmash_dun_ve_hafta.sql` (dünün içeriği, cuma haftası, şampiyonlar, oyuncu sayfası) ve `20261021120100_mindmash_dun_ve_hafta_silme.sql` (çıkış kaydının iki gün tutulması, iki haftalık saklama ve `pg_cron` işi; silme içerdiği için ayrı). Tablolarda politika yoktur; istemci yalnızca aşağıdaki `security definer` fonksiyonları çağırır. Kullanıcı kimliği Firebase oturum anahtarından gelir (`tt_firebase_uid()`: `iss = https://securetoken.google.com/mindmash-takvim`, `aud = mindmash-takvim` ise `sub`; anahtarda `role` talebi olmadığı için istek `anon` rolüyle çalışır).
 
 ```sql
 tt_oyuncular (uid text pk, ad, ad_turu 'instagram'|'facebook', ad_anahtar unique,
