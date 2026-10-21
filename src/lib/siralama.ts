@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js'
 import { oku, yaz } from './depo'
 import { hesapDinle, kimlikAnahtari } from './hesap'
 import { SUPABASE_ANAHTARI, SUPABASE_URL, supabase } from './supabase'
+import { gunEkle, trBugun } from './tarih'
 import type { AdTuru } from './oyuncuAdi'
 import type { Durum } from './harfler'
 import type { BitisBilgisi } from './kelimeOyunu'
@@ -23,6 +24,7 @@ export interface Oyuncu {
   ad: string
   adTuru: AdTuru
   durum: 'yeni' | 'onayli' | 'red' // red: ad sıralamada görünmez, yeni ad seçilmeli
+  kimlik: string | null // oyuncu sayfasının adresi (#/oyuncu/<kimlik>); eski sunucuda yok
 }
 
 export type OyuncuDurumu =
@@ -86,9 +88,9 @@ function ayarla(d: OyuncuDurumu) {
   dinleyiciler.forEach((f) => f(durum))
 }
 
-type HamOyuncu = { ad: string; ad_turu: AdTuru; durum: Oyuncu['durum'] } | null
+type HamOyuncu = { ad: string; ad_turu: AdTuru; durum: Oyuncu['durum']; kimlik?: string } | null
 const oyuncuDurumu = (uid: string, o: HamOyuncu): OyuncuDurumu =>
-  o ? { durum: 'kayitli', uid, oyuncu: { ad: o.ad, adTuru: o.ad_turu, durum: o.durum } } : { durum: 'adsiz', uid }
+  o ? { durum: 'kayitli', uid, oyuncu: { ad: o.ad, adTuru: o.ad_turu, durum: o.durum, kimlik: o.kimlik ?? null } } : { durum: 'adsiz', uid }
 
 async function oyuncuyuGetir(uid: string) {
   ayarla({ durum: 'yukleniyor', uid })
@@ -287,12 +289,13 @@ export async function kelimeTahmini(
 
 // ===== Sıralama =====
 export type SiralamaOyunu = 'kelime' | 'quiz'
-export type SiralamaDonemi = 'gun' | 'hafta'
+export type SiralamaDonemi = 'gun' | 'dun' | 'hafta' // hafta cuma 00:00'da başlar
 
 export interface SiralamaSatiri {
   sira: number
   ad: string
   adTuru: AdTuru
+  kimlik: string | null
   puan: number
   oyun: number
   ben: boolean
@@ -301,24 +304,135 @@ export interface SiralamaSatiri {
 export interface Siralama {
   baslangic: string
   bitis: string
+  kesin: boolean // dönemin içeriği artık puanlı oynanamaz, sonuç değişmez
   oyuncuSayisi: number
   liste: SiralamaSatiri[]
-  ben: { sira: number; puan: number; oyun: number } | null
+  ben: { sira: number; puan: number; oyun: number; kimlik: string | null } | null
 }
+
+type HamSatir = { sira: number; ad: string; ad_turu: AdTuru; kimlik?: string; puan: number; oyun?: number; ben?: boolean }
+const satir = (s: HamSatir): SiralamaSatiri => ({
+  sira: s.sira,
+  ad: s.ad,
+  adTuru: s.ad_turu,
+  kimlik: s.kimlik ?? null,
+  puan: s.puan,
+  oyun: s.oyun ?? 0,
+  ben: !!s.ben,
+})
+
+/** Kendi sırası da gelsin diye sıralamadaki oyuncunun isteği anahtarlı gider. */
+const siralamaIstemcisi = () => (siraliOyuncu() ? anahtarli : supabase)
 
 export async function siralamaGetir(oyun: SiralamaOyunu, donem: SiralamaDonemi): Promise<Siralama> {
   const d = await cagir<{
     baslangic: string
     bitis: string
+    kesin?: boolean
     oyuncu_sayisi: number
-    liste: { sira: number; ad: string; ad_turu: AdTuru; puan: number; oyun: number; ben: boolean }[]
-    ben: { sira: number; puan: number; oyun: number } | null
-  }>('tt_siralama', { p_oyun: oyun, p_donem: donem }, siraliOyuncu() ? anahtarli : supabase)
+    liste: HamSatir[]
+    ben: { sira: number; puan: number; oyun: number; kimlik?: string } | null
+  }>(
+    'tt_siralama',
+    { p_oyun: oyun, p_donem: donem === 'hafta' ? 'hafta' : 'gun', p_tarih: donem === 'dun' ? gunEkle(trBugun(), -1) : null },
+    siralamaIstemcisi(),
+  )
   return {
     baslangic: d.baslangic,
     bitis: d.bitis,
+    kesin: !!d.kesin,
     oyuncuSayisi: d.oyuncu_sayisi,
-    liste: d.liste.map((s) => ({ sira: s.sira, ad: s.ad, adTuru: s.ad_turu, puan: s.puan, oyun: s.oyun, ben: s.ben })),
+    liste: d.liste.map(satir),
+    ben: d.ben ? { ...d.ben, kimlik: d.ben.kimlik ?? null } : null,
+  }
+}
+
+export interface Sampiyonlar {
+  baslangic: string
+  bitis: string
+  kesin: boolean // false: perşembenin içeriği cuma da oynanabildiği için sonuç cumartesi 00:00'da kesinleşir
+  kelime: SiralamaSatiri[]
+  quiz: SiralamaSatiri[]
+}
+
+/** Geçen haftanın her oyundaki ilk üç sırası. */
+export async function sampiyonlariGetir(): Promise<Sampiyonlar> {
+  const d = await cagir<{ baslangic: string; bitis: string; kesin: boolean; kelime: HamSatir[]; quiz: HamSatir[] }>(
+    'tt_sampiyonlar',
+    {},
+    supabase,
+  )
+  return { baslangic: d.baslangic, bitis: d.bitis, kesin: d.kesin, kelime: d.kelime.map(satir), quiz: d.quiz.map(satir) }
+}
+
+// ===== Oyuncu sayfası =====
+export type Hafta = 'bu' | 'gecen'
+
+export interface HaftaSirasi {
+  sira: number
+  puan: number
+  oyun: number
+  oyuncuSayisi: number
+}
+
+export interface HaftaKelimesi {
+  tarih: string
+  slot: Slot
+  durum: 'devam' | 'kazandi' | 'kaybetti'
+  deneme: number
+  sure: number | null // saniye; sürmekte olan oyunda null
+  puan: number
+}
+
+export interface HaftaSorusu {
+  tarih: string
+  sira: number
+  durum: 'devam' | 'dogru' | 'yanlis' | 'sure_doldu'
+  sure: number | null
+  puan: number
+}
+
+export interface OyuncuHaftasi {
+  ad: string
+  adTuru: AdTuru
+  ben: boolean
+  baslangic: string
+  bitis: string
+  kesin: boolean
+  kelime: HaftaSirasi | null // o hafta kelime oynamadıysa null
+  quiz: HaftaSirasi | null
+  kelimeler: HaftaKelimesi[]
+  sorular: HaftaSorusu[]
+}
+
+type HamSira = { sira: number; puan: number; oyun: number; oyuncu_sayisi: number } | null
+const haftaSirasi = (s: HamSira): HaftaSirasi | null => (s ? { sira: s.sira, puan: s.puan, oyun: s.oyun, oyuncuSayisi: s.oyuncu_sayisi } : null)
+
+/** Oyuncunun bu haftası veya geçen haftası. Tahminler ve seçilen şıklar gelmez. */
+export async function oyuncuHaftasiGetir(kimlik: string, hafta: Hafta): Promise<OyuncuHaftasi> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(kimlik)) throw new SiralamaHatasi('oyuncu_yok')
+  const d = await cagir<{
+    ad: string
+    ad_turu: AdTuru
+    ben: boolean
+    baslangic: string
+    bitis: string
+    kesin: boolean
+    kelime: HamSira
+    quiz: HamSira
+    kelimeler: HaftaKelimesi[]
+    sorular: HaftaSorusu[]
+  }>('tt_oyuncu_haftasi', { p_kimlik: kimlik, p_tarih: hafta === 'gecen' ? gunEkle(trBugun(), -7) : null }, siralamaIstemcisi())
+  return {
+    ad: d.ad,
+    adTuru: d.ad_turu,
     ben: d.ben,
+    baslangic: d.baslangic,
+    bitis: d.bitis,
+    kesin: d.kesin,
+    kelime: haftaSirasi(d.kelime),
+    quiz: haftaSirasi(d.quiz),
+    kelimeler: d.kelimeler,
+    sorular: d.sorular,
   }
 }

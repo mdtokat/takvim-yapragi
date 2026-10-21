@@ -42,7 +42,7 @@ export function SiralamaBolumu() {
       ) : oyuncu.durum === 'adsiz' ? (
         <>
           <p className="aciklama">
-            Sıralamada görünmek için Instagram kullanıcı adını ya da Facebook'taki adını yaz. Bu ad herkese görünür. Sıralamaya giren
+            Sıralamada görünmek için Instagram kullanıcı adını ya da Facebook'taki adını yaz. Bu ad ve haftalık sonuçların herkese görünür. Sıralamaya giren
             sorularda 30, kelimelerde 90 saniye süren olur.
           </p>
           {form ? (
@@ -64,14 +64,17 @@ export function SiralamaBolumu() {
           {oyuncu.oyuncu.durum === 'red' && (
             <p className="uyari">Bu ad sıralamada gösterilmiyor. Kendine ait, uygun bir ad seçip yeniden kaydet.</p>
           )}
-          <p className="aciklama">Bugünün soruları ve kelimeleri süreli oynanır; puanların günlük ve haftalık sıralamaya girer.</p>
+          <p className="aciklama">
+            Bugünün ve dünün soruları ve kelimeleri süreli oynanır; puanların günlük ve haftalık sıralamaya girer. Adın ve haftalık
+            sonuçların herkese görünür.
+          </p>
           {form ? (
             <AdFormu onKaydedildi={() => setForm(false)} />
           ) : cikisOnayi ? (
             <div className="hesap-onay">
               <p>
-                Sıralamadaki adın ve bütün puanların silinecek. Oyunlar süresiz ve puansız oynanmaya devam eder. Bugün yeniden katılsan
-                da bugünün soruları ve kelimeleri sıralamaya girmez.
+                Sıralamadaki adın ve bütün puanların silinecek. Oyunlar süresiz ve puansız oynanmaya devam eder. Yeniden katılsan da
+                bugünün ve dünün soruları ve kelimeleri sıralamaya girmez.
               </p>
               <div className="dugme-grubu">
                 <button className="dugme" disabled={mesgul} onClick={() => void cik()}>
@@ -90,6 +93,11 @@ export function SiralamaBolumu() {
               <a className="metin-dugme" href="#/siralama">
                 Sıralamayı gör
               </a>
+              {oyuncu.oyuncu.kimlik && (
+                <a className="metin-dugme" href={`#/oyuncu/${oyuncu.oyuncu.kimlik}`}>
+                  Haftalık sonuçlarım
+                </a>
+              )}
               <button className="metin-dugme" onClick={() => setCikisOnayi(true)}>
                 Sıralamadan çık
               </button>

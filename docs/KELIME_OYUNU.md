@@ -445,7 +445,8 @@ create table kb_puanlar (
 );
 ```
 
-- `kb_sirali_durum(p_tarih, p_slot, p_baslat)`: oyunu döndürür (tahminler, renkler, kalan süre, puan; bittiyse cevap, anlam, örnek). `p_baslat` ile yalnızca bugünün açılmış kelimesi başlatılır. 92 saniyeyi geçmiş oyun `kaybetti` olur.
+- `kb_sirali_durum(p_tarih, p_slot, p_baslat)`: oyunu döndürür (tahminler, renkler, kalan süre, puan; bittiyse cevap, anlam, örnek). `p_baslat` ile bugünün veya dünün açılmış kelimesi başlatılır (`tt_puanli_gun`, göç `20261021120000_mindmash_dun_ve_hafta.sql`). 92 saniyeyi geçmiş oyun `kaybetti` olur.
+- `kb_gun(p_tarih)`: bir günün kelimeleri (`kb_bugun` gibi; ek olarak `bugun`). Kelime ekranı bunu kullanır; yoksa bugünün kelimeleri `kb_bugun`'den gelir.
 - `kb_sirali_tahmin(p_tarih, p_slot, p_tahmin)`: süre içindeyse tahmini ekler. Renkler `kb_renkler(tahmin, cevap)` ile hesaplanır (`kb_degerlendir` ile aynı kural). Doğru tahminde puan yazılır.
 - Kullanıcı Firebase oturum anahtarından tanınır (`tt_firebase_uid()`); anahtar yoksa `giris_gerekli`.
 
@@ -544,7 +545,8 @@ Takma ad yerine Instagram kullanıcı adı veya Facebook'taki ad kullanılır ve
 
 - Sıralamaya katılan oyuncu bugünün kelimelerini 90 saniyede oynar. Süre "Başla"ya basınca `kb_sirali_durum` ile sunucuda başlar; tahminler durumlu `kb_sirali_tahmin` fonksiyonunda değerlendirilir ve `kb_puanlar` tablosunda tutulur (durumsuz `kb_degerlendir` sıralama dışında kullanılmaya devam eder).
 - **Puan:** 1. denemede 100, sonra 80, 60, 40, 25, 10; bulunamazsa veya süre dolarsa 0. Bulunursa kalan sürenin her 3 saniyesi için 1 puan eklenir (en çok 30).
-- Cihazda süresiz oynanmaya başlanmış kelime sıralamaya girmez. Geçmiş günler puan getirmez. Sıralamadan çıkıp aynı gün yeniden katılan oyuncunun o günkü kelimeleri sıralamaya girmez.
+- Dünün kelimeleri de puanlı oynanır (ekranın üstündeki "Bugün · Dün" seçicisi, `#/kelime/YYYY-AA-GG`); puan kelimenin gününe yazılır. Daha eski günler puan getirmez. Cihazda süresiz oynanmaya başlanmış kelime sıralamaya girmez. Sıralamadan çıkıp yeniden katılan oyuncunun çıktığı günün ve önceki günün kelimeleri sıralamaya girmez.
+- Sıralama günlük, dünkü ve haftalıktır (cuma–perşembe); geçen haftanın şampiyonları ve oyuncu sayfası `docs/TASARIM.md` Bölüm 5.7'de. Puanlar iki hafta saklanır.
 - Adlar kelime bakım görevinde denetlenir (`docs/gorevler/kelime-bakim.md` ADIM 4).
 
 ### 13.2 Bağlantılar modu

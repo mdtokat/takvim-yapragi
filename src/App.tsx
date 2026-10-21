@@ -13,6 +13,7 @@ import { QuizEkrani } from './views/QuizEkrani'
 import { KelimeEkrani } from './views/KelimeEkrani'
 import { AyarlarEkrani } from './views/AyarlarEkrani'
 import { SiralamaEkrani } from './views/SiralamaEkrani'
+import { OyuncuEkrani } from './views/OyuncuEkrani'
 import { AltMenu, type Sekme } from './components/AltMenu'
 import { AdPenceresi } from './components/AdPenceresi'
 
@@ -51,10 +52,13 @@ export default function App() {
       icerik = <QuizEkrani tarih={rota.tarih} />
       break
     case 'kelime':
-      icerik = <KelimeEkrani />
+      icerik = <KelimeEkrani tarih={rota.tarih} />
       break
     case 'siralama':
-      icerik = <SiralamaEkrani oyun={rota.oyun} />
+      icerik = <SiralamaEkrani oyun={rota.oyun} donem={rota.donem} />
+      break
+    case 'oyuncu':
+      icerik = <OyuncuEkrani kimlik={rota.kimlik} />
       break
     case 'ayarlar':
       icerik = <AyarlarEkrani />
@@ -63,11 +67,14 @@ export default function App() {
       icerik = <GunEkrani tarih={rota.tarih ?? bugun()} />
   }
 
-  // Takvim Bugün ekranındaki tarihten açılır; sorular yalnızca bugünün sorularıysa kendi sekmesinde sayılır.
+  // Takvim Bugün ekranındaki tarihten açılır; sorular yalnızca bugünün sorularıysa kendi sekmesinde sayılır. Oyuncu sayfası
+  // sıralamadan açılır.
   const sekme: Sekme =
     rota.ad === 'kelime' || rota.ad === 'siralama' || rota.ad === 'ayarlar'
       ? rota.ad
-      : rota.ad === 'quiz' && rota.tarih === bugun()
+      : rota.ad === 'oyuncu'
+        ? 'siralama'
+        : rota.ad === 'quiz' && rota.tarih === bugun()
         ? 'sorular'
         : 'bugun'
 

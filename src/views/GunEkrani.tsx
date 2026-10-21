@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { gunuGetir, onbellektekiGun, rastgeleDoluGun } from '../lib/api'
-import { bugun, gunEkle, tarihCoz, artikYil, saatteMetni, trBugun, trZamani } from '../lib/tarih'
+import { bugun, gunEkle, tarihCoz, artikYil, puanliGun, saatteMetni, trBugun, trZamani } from '../lib/tarih'
 import { degistir, git } from '../lib/yonlendirme'
 import { ayarlariGuncelle, useAyarlar } from '../lib/ayarlar'
 import { cevabi, cevapSayisi, quizKaydi, quizTamam, seri, soruDurumlari, useAcilisYenile, type QuizKaydi, type SoruDurumu } from '../lib/quizDepo'
 import { SLOT_ADI, SLOT_SAATI, type Slot } from '../lib/sabitler'
+import { kelimeKaydi } from '../lib/kelimeDepo'
+import { useOyuncu } from '../lib/siralama'
 import { TURLER, type GunVerisi, type GununBilgisi, type Tur } from '../lib/tipler'
 import { sesCal } from '../lib/ses'
 import { useDepoSurumu } from '../lib/senkron'
@@ -37,6 +39,15 @@ function kelimeDurumMetni(simdi = Date.now()): string {
   return `${SLOT_ADI[acik[acik.length - 1]]} kelimesi açık. Sıradaki ${saat}`
 }
 
+/** Geçmiş bir günün kelimeleri: cihazdaki oyunlara göre. */
+function gecmisKelimeMetni(tarih: string): string {
+  const oyunlar = (Object.keys(SLOT_SAATI) as Slot[]).map((s) => kelimeKaydi(tarih, s))
+  const biten = oyunlar.filter((k) => k && k.durum !== 'devam')
+  if (!oyunlar.some((k) => k && k.tahminler.length > 0)) return 'Üç kelime seni bekliyor'
+  if (biten.length < 3) return `${biten.length}/3 kelime bitti`
+  return `${biten.filter((k) => k!.durum === 'kazandi').length}/3 kelime bulundu`
+}
+
 interface Gecis {
   no: number
   yon: 'ileri' | 'geri'
@@ -56,6 +67,7 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
   useDepoSurumu() // quiz sonucu hesap eşitlemesiyle değişince köşe yenilensin
   const tarih = tarihCoz(hamTarih) ? hamTarih : bugun()
   const ayar = useAyarlar()
+  const oyuncu = useOyuncu()
   const [tur, setTur] = useState<Tur>('olay')
   const [deneme, setDeneme] = useState(0)
   const [durum, setDurum] = useState<Durum>(() => {
@@ -127,6 +139,9 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
   const durumlar = useMemo(() => soruDurumlari(veri), [veri])
   useAcilisYenile(durumlar, () => setDeneme((n) => n + 1))
   const quizHazir = durumlar.length === 3 && tarih <= bugun()
+  // Dünün soruları ve kelimeleri bu gece 23:59'a kadar sıralamaya girer.
+  const dunMu = tarih !== trBugun() && puanliGun(tarih)
+  const puanliNotu = dunMu && oyuncu.durum === 'kayitli' ? <span className="seri">23:59'a kadar puanlı</span> : null
   const quizSonucu = quizKaydi(tarih)
   const buYil = tarihCoz(tarih)!.getFullYear() === new Date().getFullYear()
 
@@ -172,7 +187,7 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
         </p>
       )}
 
-      {(quizHazir || tarih === bugun()) && (
+      {(quizHazir || tarih === bugun() || dunMu) && (
         <div className="koseler">
           {quizHazir && (
             <a className="kose" href={`#/quiz/${tarih}`}>
@@ -182,6 +197,7 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
               </span>
               <span className="kose-durum">{soruDurumMetni(durumlar, quizSonucu)}</span>
               {tarih === bugun() && seri() > 0 && <span className="seri">{seri()} günlük seri</span>}
+              {puanliNotu}
             </a>
           )}
           {tarih === bugun() && (
@@ -191,6 +207,16 @@ export function GunEkrani({ tarih: hamTarih }: { tarih: string }) {
                 <span className="kose-baslik">Günün kelimesi</span>
               </span>
               <span className="kose-durum">{kelimeDurumMetni()}</span>
+            </a>
+          )}
+          {dunMu && (
+            <a className="kose" href={`#/kelime/${tarih}`}>
+              <span className="kose-ust">
+                <KelimeIkonu />
+                <span className="kose-baslik">Günün kelimesi</span>
+              </span>
+              <span className="kose-durum">{gecmisKelimeMetni(tarih)}</span>
+              {puanliNotu}
             </a>
           )}
         </div>
